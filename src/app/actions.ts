@@ -14,6 +14,7 @@ type Track = {
   duration: number;
   releaseDate: string;
   albumArtUrl?: string;
+  explicit: boolean;
 };
 
 type Playlist = {

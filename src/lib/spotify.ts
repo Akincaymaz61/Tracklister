@@ -45,7 +45,7 @@ class SpotifyClient {
   public async getPlaylist(playlistId: string): Promise<any> {
     const token = await this.getAccessToken();
     const fields =
-      'name,owner.display_name,images,tracks.total,tracks.next,tracks.items(track(name,artists(name),album(name,release_date,images),duration_ms))';
+      'name,owner.display_name,images,tracks.total,tracks.next,tracks.items(track(name,artists(name),album(name,release_date,images),duration_ms,explicit))';
     let playlistData: any = {};
     let allItems: any[] = [];
     let nextUrl: string | null = `https://api.spotify.com/v1/playlists/${playlistId}?fields=${fields}`;

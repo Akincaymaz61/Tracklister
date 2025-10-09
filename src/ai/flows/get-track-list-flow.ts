@@ -16,6 +16,7 @@ const TrackSchema = z.object({
   duration: z.number().describe("The duration of the track in milliseconds."),
   releaseDate: z.string().describe("The release date of the album."),
   albumArtUrl: z.string().optional().describe("The URL of the album art."),
+  explicit: z.boolean().describe("Whether the track is explicit."),
 });
 
 const PlaylistSchema = z.object({
@@ -77,6 +78,7 @@ const getTrackListFlow_flow = ai.defineFlow(
         duration: item.track.duration_ms,
         releaseDate: item.track.album.release_date,
         albumArtUrl: item.track.album.images?.[0]?.url,
+        explicit: item.track.explicit,
     }));
 
     return {

@@ -6,7 +6,7 @@ import Image from "next/image";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { Loader2, Music, ListMusic, Download, Moon, Sun } from "lucide-react";
+import { Loader2, Music, ListMusic, Download, Moon, Sun, ShieldAlert } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -21,6 +21,9 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { getTrackList } from "./actions";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+
 
 const formSchema = z.object({
   playlistUrl: z.string().url({ message: "Please enter a valid Spotify playlist URL." }),
@@ -33,6 +36,7 @@ type Track = {
   duration: number;
   releaseDate: string;
   albumArtUrl?: string;
+  explicit: boolean;
 };
 
 type Playlist = {
@@ -69,6 +73,7 @@ function ThemeToggle() {
 export default function Home() {
   const [playlist, setPlaylist] = useState<Playlist | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [excludeExplicit, setExcludeExplicit] = useState(false);
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -105,7 +110,11 @@ export default function Home() {
 
   function downloadTrackList() {
     if (!playlist) return;
-    const fileContent = playlist.tracks
+    const tracksToDownload = excludeExplicit
+      ? playlist.tracks.filter(track => !track.explicit)
+      : playlist.tracks;
+
+    const fileContent = tracksToDownload
       .map((track) => `${track.title} - ${track.artist}`)
       .join("\n");
     const blob = new Blob([fileContent], { type: "text/plain;charset=utf-8" });
@@ -204,13 +213,21 @@ export default function Home() {
           <div className="lg:w-2/3">
             <Card className="shadow-lg rounded-lg">
                 <CardHeader>
-                <div className="flex justify-between items-center">
-                    <CardTitle className="text-xl">Your Tracks ({playlist.tracks.length})</CardTitle>
-                    <Button variant="outline" size="sm" onClick={downloadTrackList}>
-                    <Download className="mr-2 h-4 w-4" />
-                    Download .txt
-                    </Button>
-                </div>
+                  <div className="flex justify-between items-center">
+                      <CardTitle className="text-xl">Your Tracks ({playlist.tracks.length})</CardTitle>
+                      <div className="flex items-center gap-4">
+                        <div className="flex items-center space-x-2">
+                          <Checkbox id="exclude-explicit" checked={excludeExplicit} onCheckedChange={(checked) => setExcludeExplicit(checked as boolean)} />
+                          <Label htmlFor="exclude-explicit" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                            Exclude explicit
+                          </Label>
+                        </div>
+                        <Button variant="outline" size="sm" onClick={downloadTrackList}>
+                          <Download className="mr-2 h-4 w-4" />
+                          Download .txt
+                        </Button>
+                      </div>
+                  </div>
                 </CardHeader>
                 <CardContent className="p-0">
                 <div className="max-h-[600px] overflow-y-auto">
@@ -236,8 +253,23 @@ export default function Home() {
                             )}
 
                             <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-x-4">
-                                <div>
+                                <div className="flex items-center gap-2">
+                                    {track.explicit && (
+                                      <TooltipProvider>
+                                        <Tooltip>
+                                          <TooltipTrigger>
+                                            <ShieldAlert className="w-4 h-4 text-muted-foreground" />
+                                          </TooltipTrigger>
+                                          <TooltipContent>
+                                            <p>Explicit</p>
+                                          </TooltipContent>
+                                        </Tooltip>
+                                      </TooltipProvider>
+                                    )}
                                     <p className="font-semibold text-foreground truncate">{track.title}</p>
+                                </div>
+                                <p className="text-sm text-muted-foreground truncate sm:hidden">{track.artist}</p>
+                                <div className="hidden sm:block">
                                     <p className="text-sm text-muted-foreground truncate">{track.artist}</p>
                                 </div>
                                 <div className="hidden sm:block">
