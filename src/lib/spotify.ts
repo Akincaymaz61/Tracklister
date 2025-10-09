@@ -82,14 +82,14 @@ class SpotifyClient {
 
       if (!response.ok) {
         console.error(await response.text());
+        // In case of an error on a subsequent page, we stop and return what we have so far.
         console.error(`Failed to fetch next page for playlist ${playlistId}. Partial data will be returned.`);
-        nextUrl = null; // Stop pagination on error
-        continue;
+        nextUrl = null; 
+      } else {
+        const pageData = await response.json();
+        allItems = allItems.concat(pageData.items);
+        nextUrl = pageData.next;
       }
-      
-      const pageData = await response.json();
-      allItems = allItems.concat(pageData.items);
-      nextUrl = pageData.next;
     }
     
     return { ...playlistData, tracks: { items: allItems } };
