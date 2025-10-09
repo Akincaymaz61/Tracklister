@@ -24,18 +24,20 @@ export async function getTrackListFlow(
 
 // Helper function to extract playlist ID from URL
 function getPlaylistIdFromUrl(url: string): string | null {
-  try {
-    const path = new URL(url).pathname;
-    const parts = path.split('/');
-    const playlistIndex = parts.findIndex(p => p === 'playlist');
-    if (playlistIndex !== -1 && parts[playlistIndex + 1]) {
-      return parts[playlistIndex + 1];
+    try {
+      const { pathname } = new URL(url);
+      const pathParts = pathname.split('/').filter(Boolean); // filter Boolean removes empty strings
+      const playlistIndex = pathParts.indexOf('playlist');
+      
+      if (playlistIndex > -1 && pathParts[playlistIndex + 1]) {
+        return pathParts[playlistIndex + 1];
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Invalid URL:', error);
+      return null;
     }
-    return null;
-  } catch (error) {
-    console.error("Invalid URL:", error);
-    return null;
-  }
 }
 
 const getTrackListFlow_flow = ai.defineFlow(
@@ -52,9 +54,9 @@ const getTrackListFlow_flow = ai.defineFlow(
     }
 
     const spotify = await getSpotifyClient();
-    const response = await spotify.getPlaylist(playlistId);
+    const playlist = await spotify.getPlaylist(playlistId);
 
-    const tracks = response.tracks.items
+    const tracks = playlist.tracks.items
       .filter((item: any) => item.track) // Filter out any items without a track object
       .map((item: any) => ({
         title: item.track.name,

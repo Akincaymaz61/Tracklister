@@ -4,7 +4,7 @@ import { z } from "zod";
 import { getTrackListFlow } from "@/ai/flows/get-track-list-flow";
 
 const formSchema = z.object({
-  playlistUrl: z.string().url(),
+  playlistUrl: z.string().min(1, { message: "Please enter a URL." }),
 });
 
 type Track = {
