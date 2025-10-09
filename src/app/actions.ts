@@ -12,11 +12,6 @@ type Track = {
   artist: string;
 };
 
-async function fetchPlaylistData(playlistUrl: string): Promise<Track[]> {
-  console.log(`Fetching playlist from: ${playlistUrl}`);
-  return await getTrackListFlow(playlistUrl);
-}
-
 
 export async function getTrackList(playlistUrl: string): Promise<{ data?: Track[]; error?: string }> {
   try {
@@ -25,15 +20,18 @@ export async function getTrackList(playlistUrl: string): Promise<{ data?: Track[
       return { error: "Invalid URL provided. Please enter a complete and valid URL." };
     }
     
-    const tracks = await fetchPlaylistData(validatedUrl.data.playlistUrl);
-
-    if (!tracks || tracks.length === 0) {
-      return { error: "Could not find any tracks in the playlist. It might be empty or private." };
-    }
+    const tracks = await getTrackListFlow(validatedUrl.data.playlistUrl);
 
     return { data: tracks };
   } catch (error) {
     console.error(error);
+    if (error instanceof Error) {
+        // Provide a more user-friendly error message
+        if (error.message.includes('Authentication failed')) {
+            return { error: "Could not authenticate with Spotify. Please check your API credentials in the .env file."};
+        }
+        return { error: `An unexpected error occurred: ${error.message}` };
+    }
     return { error: "An unexpected error occurred. Please try again later." };
   }
 }

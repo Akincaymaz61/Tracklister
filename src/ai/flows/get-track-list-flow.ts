@@ -7,6 +7,7 @@
 
 import { ai } from "@/ai/genkit";
 import { z } from "genkit";
+import { getSpotifyClient } from "@/lib/spotify";
 
 const TrackSchema = z.object({
   title: z.string().describe("The title of the track."),
@@ -21,6 +22,22 @@ export async function getTrackListFlow(
   return getTrackListFlow_flow(playlistUrl);
 }
 
+// Helper function to extract playlist ID from URL
+function getPlaylistIdFromUrl(url: string): string | null {
+  try {
+    const path = new URL(url).pathname;
+    const parts = path.split('/');
+    const playlistIndex = parts.findIndex(p => p === 'playlist');
+    if (playlistIndex !== -1 && parts[playlistIndex + 1]) {
+      return parts[playlistIndex + 1];
+    }
+    return null;
+  } catch (error) {
+    console.error("Invalid URL:", error);
+    return null;
+  }
+}
+
 const getTrackListFlow_flow = ai.defineFlow(
   {
     name: "getTrackListFlow",
@@ -28,52 +45,20 @@ const getTrackListFlow_flow = ai.defineFlow(
     outputSchema: TrackListSchema,
   },
   async (playlistUrl) => {
-    const rawHtml = await fetchHtml(playlistUrl);
-    // Pre-process the HTML to extract only the relevant part for the tracks.
-    // This helps the model focus and avoid issues with large HTML files.
-    const mainContentRegex = /<main[^>]*>([\s\S]*?)<\/main>/;
-    const mainContentMatch = rawHtml.match(mainContentRegex);
-    const processedHtml = mainContentMatch ? mainContentMatch[1] : rawHtml;
+    const playlistId = getPlaylistIdFromUrl(playlistUrl);
 
-    const prompt = `You are an expert at parsing HTML to extract data.
-      Below is a snippet of HTML from a Spotify playlist page's main content area.
-      Please extract the title and artist for **ALL** tracks in this snippet.
-      It is critical that you return every single track and do not truncate the list.
+    if (!playlistId) {
+      throw new Error("Invalid Spotify playlist URL.");
+    }
 
-      HTML Snippet:
-      \`\`\`html
-      ${processedHtml}
-      \`\`\`
-    `;
+    const spotify = await getSpotifyClient();
+    const response = await spotify.getPlaylist(playlistId);
 
-    // We are not awaiting the result of the generation
-    // to avoid blocking the main thread.
-    const { output } = await ai.generate({
-      prompt: prompt,
-      output: {
-        schema: TrackListSchema,
-      },
-      config: {
-        temperature: 0.1,
-      },
-    });
+    const tracks = response.tracks.items.map((item: any) => ({
+        title: item.track.name,
+        artist: item.track.artists.map((artist: any) => artist.name).join(', '),
+    }));
 
-    return output ?? [];
+    return tracks;
   }
 );
-
-async function fetchHtml(url: string): Promise<string> {
-  try {
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error(`Failed to fetch playlist HTML: ${response.status} ${response.statusText}`);
-    }
-    return await response.text();
-  } catch (e) {
-    console.error(e);
-    if (e instanceof Error) {
-        throw new Error(`Failed to fetch playlist HTML: ${e.message}`);
-    }
-    throw new Error('An unknown error occurred while fetching the playlist HTML.');
-  }
-}

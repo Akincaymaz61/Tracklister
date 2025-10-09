@@ -55,6 +55,12 @@ export default function Home() {
       });
     } else if (result.data) {
       setTracks(result.data);
+      if (result.data.length === 0) {
+        toast({
+            title: "No tracks found",
+            description: "Could not find any tracks. The playlist might be empty or private.",
+        });
+      }
     }
     
     setIsLoading(false);
@@ -64,7 +70,7 @@ export default function Home() {
     const fileContent = tracks
       .map((track) => `${track.title} - ${track.artist}`)
       .join("\n");
-    const blob = new Blob([fileContent], { type: "text/plain" });
+    const blob = new Blob([fileContent], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -134,7 +140,7 @@ export default function Home() {
           <Card className="shadow-lg rounded-lg">
             <CardHeader>
               <div className="flex justify-between items-center">
-                <CardTitle className="text-xl">Your Tracks</CardTitle>
+                <CardTitle className="text-xl">Your Tracks ({tracks.length})</CardTitle>
                 <Button variant="outline" size="sm" onClick={downloadTrackList}>
                   <Download className="mr-2 h-4 w-4" />
                   Download .txt
@@ -142,12 +148,12 @@ export default function Home() {
               </div>
             </CardHeader>
             <CardContent className="p-0">
-              <ul className="divide-y divide-border">
+              <ul className="divide-y divide-border max-h-96 overflow-y-auto">
                 {tracks.map((track, index) => (
                   <li 
                     key={index}
                     className="p-4 flex items-center gap-4 animate-fade-in opacity-0"
-                    style={{ animationDelay: `${index * 75}ms` }}
+                    style={{ animationDelay: `${index * 50}ms` }}
                   >
                     <div className="bg-primary text-primary-foreground rounded-full h-10 w-10 flex-shrink-0 flex items-center justify-center font-bold text-sm">
                       {index + 1}
