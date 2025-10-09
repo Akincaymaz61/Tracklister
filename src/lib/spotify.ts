@@ -44,8 +44,37 @@ class SpotifyClient {
 
   public async getPlaylist(playlistId: string): Promise<any> {
     const token = await this.getAccessToken();
+    const fields =
+      'name,owner.display_name,images,tracks.total,tracks.next,tracks.items(track(name,artists(name),album(name,release_date,images),duration_ms))';
+    let playlistData: any = {};
     let allItems: any[] = [];
-    let nextUrl: string | null = `https://api.spotify.com/v1/playlists/${playlistId}/tracks?fields=items(track(name,artists(name))),next`;
+    let nextUrl: string | null = `https://api.spotify.com/v1/playlists/${playlistId}?fields=${fields}`;
+
+    // Initial request for the first page and playlist details
+    const initialResponse = await fetch(nextUrl, {
+        headers: {
+            Authorization: `Bearer ${token}`,
+        },
+    });
+
+    if (!initialResponse.ok) {
+        console.error(await initialResponse.text());
+        throw new Error(`Failed to fetch playlist ${playlistId}`);
+    }
+
+    const data = await initialResponse.json();
+
+    // Store playlist details
+    playlistData = {
+        name: data.name,
+        owner: data.owner.display_name,
+        imageUrl: data.images?.[0]?.url,
+        total: data.tracks.total,
+    };
+    
+    allItems = allItems.concat(data.tracks.items);
+    nextUrl = data.tracks.next;
+
 
     while (nextUrl) {
       const response = await fetch(nextUrl, {
@@ -56,17 +85,19 @@ class SpotifyClient {
 
       if (!response.ok) {
         console.error(await response.text());
-        throw new Error(`Failed to fetch playlist ${playlistId}`);
+        // Don't throw an error for subsequent pages, just log it and continue
+        console.error(`Failed to fetch next page for playlist ${playlistId}`);
+        nextUrl = null; 
+        continue;
       }
       
-      const data = await response.json();
-      allItems = allItems.concat(data.items);
-      nextUrl = data.next;
+      const pageData = await response.json();
+      allItems = allItems.concat(pageData.items);
+      nextUrl = pageData.next;
     }
     
-    // The Spotify API returns a paginated list of tracks. We've fetched all pages.
-    // Now we combine them into a single object that looks like a simplified playlist response.
-    return { tracks: { items: allItems } };
+    // Combine playlist details with all fetched tracks
+    return { ...playlistData, tracks: { items: allItems } };
   }
 }
 

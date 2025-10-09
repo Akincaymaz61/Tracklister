@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { useTheme } from "next-themes";
+import Image from "next/image";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { Loader2, Music, ListMusic, Download } from "lucide-react";
+import { Loader2, Music, ListMusic, Download, Moon, Sun } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -16,7 +18,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { getTrackList } from "./actions";
 
@@ -27,10 +29,45 @@ const formSchema = z.object({
 type Track = {
   title: string;
   artist: string;
+  album: string;
+  duration: number;
+  releaseDate: string;
+  albumArtUrl?: string;
 };
 
+type Playlist = {
+    name: string;
+    owner: string;
+    imageUrl?: string;
+    total: number;
+    tracks: Track[];
+}
+
+// Helper to format milliseconds into MM:SS
+const formatDuration = (ms: number) => {
+    const minutes = Math.floor(ms / 60000);
+    const seconds = ((ms % 60000) / 1000).toFixed(0);
+    return `${minutes}:${seconds.padStart(2, '0')}`;
+};
+
+function ThemeToggle() {
+    const { theme, setTheme } = useTheme();
+  
+    return (
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={() => setTheme(theme === "light" ? "dark" : "light")}
+        aria-label="Toggle theme"
+      >
+        <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+        <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+      </Button>
+    );
+}
+
 export default function Home() {
-  const [tracks, setTracks] = useState<Track[]>([]);
+  const [playlist, setPlaylist] = useState<Playlist | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
@@ -43,7 +80,7 @@ export default function Home() {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
-    setTracks([]);
+    setPlaylist(null);
 
     const result = await getTrackList(values.playlistUrl);
 
@@ -54,8 +91,8 @@ export default function Home() {
         description: result.error,
       });
     } else if (result.data) {
-      setTracks(result.data);
-      if (result.data.length === 0) {
+      setPlaylist(result.data);
+      if (result.data.tracks.length === 0) {
         toast({
             title: "No tracks found",
             description: "Could not find any tracks. The playlist might be empty or private.",
@@ -67,14 +104,15 @@ export default function Home() {
   }
 
   function downloadTrackList() {
-    const fileContent = tracks
+    if (!playlist) return;
+    const fileContent = playlist.tracks
       .map((track) => `${track.title} - ${track.artist}`)
       .join("\n");
     const blob = new Blob([fileContent], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "spotify-playlist.txt";
+    a.download = `${playlist.name}-playlist.txt`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -83,6 +121,9 @@ export default function Home() {
   
   return (
     <main className="flex min-h-screen flex-col items-center p-4 sm:p-8 md:p-12 lg:p-24 bg-background">
+      <div className="absolute top-4 right-4">
+        <ThemeToggle />
+      </div>
       <div className="z-10 w-full max-w-4xl items-center justify-center font-headline text-center">
         <div className="flex items-center justify-center gap-4 mb-4">
           <div className="p-3 rounded-full bg-accent/20 text-accent">
@@ -135,38 +176,85 @@ export default function Home() {
         </CardContent>
       </Card>
 
-      {tracks.length > 0 && (
-        <div className="w-full max-w-2xl mt-8">
-          <Card className="shadow-lg rounded-lg">
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <CardTitle className="text-xl">Your Tracks ({tracks.length})</CardTitle>
-                <Button variant="outline" size="sm" onClick={downloadTrackList}>
-                  <Download className="mr-2 h-4 w-4" />
-                  Download .txt
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="p-0">
-              <ul className="divide-y divide-border max-h-96 overflow-y-auto">
-                {tracks.map((track, index) => (
-                  <li 
-                    key={index}
-                    className="p-4 flex items-center gap-4 animate-fade-in opacity-0"
-                    style={{ animationDelay: `${index * 50}ms` }}
-                  >
-                    <div className="bg-primary text-primary-foreground rounded-full h-10 w-10 flex-shrink-0 flex items-center justify-center font-bold text-sm">
-                      {index + 1}
+      {playlist && playlist.tracks.length > 0 && (
+        <div className="w-full max-w-4xl mt-8 flex flex-col lg:flex-row gap-8">
+          <div className="lg:w-1/3">
+            <Card className="shadow-lg rounded-lg sticky top-8">
+                {playlist.imageUrl && (
+                    <Image 
+                        src={playlist.imageUrl}
+                        alt={`Cover for ${playlist.name}`}
+                        width={400}
+                        height={400}
+                        className="rounded-t-lg object-cover w-full aspect-square"
+                    />
+                )}
+                <CardHeader>
+                    <CardTitle>{playlist.name}</CardTitle>
+                    <CardDescription>By {playlist.owner}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="flex justify-between items-center text-sm text-muted-foreground">
+                        <span>Total tracks</span>
+                        <span className="font-bold">{playlist.total}</span>
                     </div>
-                    <div>
-                      <p className="font-semibold text-foreground">{track.title}</p>
-                      <p className="text-sm text-muted-foreground">{track.artist}</p>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </CardContent>
-          </Card>
+                </CardContent>
+            </Card>
+          </div>
+          <div className="lg:w-2/3">
+            <Card className="shadow-lg rounded-lg">
+                <CardHeader>
+                <div className="flex justify-between items-center">
+                    <CardTitle className="text-xl">Your Tracks ({playlist.tracks.length})</CardTitle>
+                    <Button variant="outline" size="sm" onClick={downloadTrackList}>
+                    <Download className="mr-2 h-4 w-4" />
+                    Download .txt
+                    </Button>
+                </div>
+                </CardHeader>
+                <CardContent className="p-0">
+                <div className="max-h-[600px] overflow-y-auto">
+                    <ul className="divide-y divide-border">
+                        {playlist.tracks.map((track, index) => (
+                        <li 
+                            key={index}
+                            className="p-3 flex items-center gap-4 animate-fade-in opacity-0"
+                            style={{ animationDelay: `${index * 30}ms` }}
+                        >
+                            {track.albumArtUrl ? (
+                                <Image 
+                                    src={track.albumArtUrl}
+                                    alt={`Album art for ${track.album}`}
+                                    width={48}
+                                    height={48}
+                                    className="rounded-md w-12 h-12 flex-shrink-0"
+                                />
+                            ) : (
+                                <div className="bg-muted text-muted-foreground rounded-md h-12 w-12 flex-shrink-0 flex items-center justify-center font-bold text-sm">
+                                    <Music className="w-6 h-6" />
+                                </div>
+                            )}
+
+                            <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-x-4">
+                                <div>
+                                    <p className="font-semibold text-foreground truncate">{track.title}</p>
+                                    <p className="text-sm text-muted-foreground truncate">{track.artist}</p>
+                                </div>
+                                <div className="hidden sm:block">
+                                    <p className="text-sm text-foreground truncate">{track.album}</p>
+                                    <p className="text-xs text-muted-foreground">{track.releaseDate}</p>
+                                </div>
+                            </div>
+                            <div className="text-sm text-muted-foreground font-mono ml-auto">
+                                {formatDuration(track.duration)}
+                            </div>
+                        </li>
+                        ))}
+                    </ul>
+                </div>
+                </CardContent>
+            </Card>
+          </div>
         </div>
       )}
     </main>

@@ -10,19 +10,31 @@ const formSchema = z.object({
 type Track = {
   title: string;
   artist: string;
+  album: string;
+  duration: number;
+  releaseDate: string;
+  albumArtUrl?: string;
 };
 
+type Playlist = {
+    name: string;
+    owner: string;
+    imageUrl?: string;
+    total: number;
+    tracks: Track[];
+}
 
-export async function getTrackList(playlistUrl: string): Promise<{ data?: Track[]; error?: string }> {
+
+export async function getTrackList(playlistUrl: string): Promise<{ data?: Playlist; error?: string }> {
   try {
     const validatedUrl = formSchema.safeParse({ playlistUrl });
     if (!validatedUrl.success) {
       return { error: "Invalid URL provided. Please enter a complete and valid URL." };
     }
     
-    const tracks = await getTrackListFlow(validatedUrl.data.playlistUrl);
+    const playlist = await getTrackListFlow(validatedUrl.data.playlistUrl);
 
-    return { data: tracks };
+    return { data: playlist };
   } catch (error) {
     console.error(error);
     if (error instanceof Error) {
