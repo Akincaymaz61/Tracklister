@@ -7,6 +7,12 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Loader2, Music, ListMusic, Download, Moon, Sun, ShieldAlert } from "lucide-react";
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 import { Button } from "@/components/ui/button";
 import {
@@ -232,7 +238,7 @@ export default function Home() {
                 <CardContent className="p-0">
                 <div className="max-h-[600px] overflow-y-auto">
                     <ul className="divide-y divide-border">
-                        {playlist.tracks.map((track, index) => (
+                        {playlist.tracks.filter(track => !(excludeExplicit && track.explicit)).map((track, index) => (
                         <li 
                             key={index}
                             className="p-3 flex items-center gap-4 animate-fade-in opacity-0"
@@ -292,3 +298,5 @@ export default function Home() {
     </main>
   );
 }
+
+    
