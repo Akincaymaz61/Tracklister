@@ -47,9 +47,9 @@ class SpotifyClient {
     const fields =
       'name,owner.display_name,images,tracks.total,tracks.next,tracks.items(track(name,artists(name),album(name,release_date,images),duration_ms,explicit))';
     
-    let url = `https://api.spotify.com/v1/playlists/${playlistId}?fields=${fields}`;
+    const initialUrl = `https://api.spotify.com/v1/playlists/${playlistId}?fields=${fields}`;
     
-    const initialResponse = await fetch(url, {
+    const initialResponse = await fetch(initialUrl, {
         headers: {
             Authorization: `Bearer ${token}`,
         },
@@ -84,7 +84,7 @@ class SpotifyClient {
         console.error(await response.text());
         // In case of an error on a subsequent page, we stop and return what we have so far.
         console.error(`Failed to fetch next page for playlist ${playlistId}. Partial data will be returned.`);
-        nextUrl = null; 
+        break; 
       } else {
         const pageData = await response.json();
         allItems = allItems.concat(pageData.items);
