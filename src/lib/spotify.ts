@@ -46,11 +46,11 @@ class SpotifyClient {
     const token = await this.getAccessToken();
     const fields =
       'name,owner.display_name,images,tracks.total,tracks.next,tracks.items(track(name,artists(name),album(name,release_date,images),duration_ms,explicit))';
-    let playlistData: any = {};
     let allItems: any[] = [];
     let nextUrl: string | null = `https://api.spotify.com/v1/playlists/${playlistId}?fields=${fields}`;
+    let playlistData: any = {};
 
-    // Initial request for the first page and playlist details
+    // Make the initial request to get playlist details and the first page of tracks
     const initialResponse = await fetch(nextUrl, {
         headers: {
             Authorization: `Bearer ${token}`,
@@ -61,10 +61,10 @@ class SpotifyClient {
         console.error(await initialResponse.text());
         throw new Error(`Failed to fetch playlist ${playlistId}`);
     }
-
+    
     const data = await initialResponse.json();
 
-    // Store playlist details
+    // Store playlist details from the first request
     playlistData = {
         name: data.name,
         owner: data.owner.display_name,
@@ -75,7 +75,7 @@ class SpotifyClient {
     allItems = allItems.concat(data.tracks.items);
     nextUrl = data.tracks.next;
 
-
+    // Fetch subsequent pages if they exist
     while (nextUrl) {
       const response = await fetch(nextUrl, {
         headers: {
@@ -85,8 +85,8 @@ class SpotifyClient {
 
       if (!response.ok) {
         console.error(await response.text());
-        // Don't throw an error for subsequent pages, just log it and continue
-        console.error(`Failed to fetch next page for playlist ${playlistId}`);
+        // Stop pagination on error but return what has been fetched so far
+        console.error(`Failed to fetch next page for playlist ${playlistId}. Partial data will be returned.`);
         nextUrl = null; 
         continue;
       }
