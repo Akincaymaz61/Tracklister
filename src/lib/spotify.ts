@@ -60,17 +60,17 @@ class SpotifyClient {
         throw new Error(`Failed to fetch playlist ${playlistId}`);
     }
     
-    const initialData = await initialResponse.json();
+    const data = await initialResponse.json();
 
     const playlistData = {
-        name: initialData.name,
-        owner: initialData.owner.display_name,
-        imageUrl: initialData.images?.[0]?.url,
-        total: initialData.tracks.total,
+        name: data.name,
+        owner: data.owner.display_name,
+        imageUrl: data.images?.[0]?.url,
+        total: data.tracks.total,
     };
     
-    let allItems = initialData.tracks.items;
-    let nextUrl = initialData.tracks.next;
+    let allItems = data.tracks.items;
+    let nextUrl = data.tracks.next;
 
     // Fetch subsequent pages if they exist
     while (nextUrl) {
