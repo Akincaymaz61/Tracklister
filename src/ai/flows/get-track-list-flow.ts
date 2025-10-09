@@ -30,7 +30,8 @@ const getTrackListFlow_flow = ai.defineFlow(
   async (playlistUrl) => {
     const prompt = `You are an expert at parsing HTML to extract data.
       Below is the HTML from a Spotify playlist page.
-      Please extract the title and artist for each track in the playlist.
+      Please extract the title and artist for **ALL** tracks in the playlist.
+      It is critical that you return every single track and do not truncate the list.
 
       HTML:
       \`\`\`html
