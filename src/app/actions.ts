@@ -1,6 +1,7 @@
 "use server";
 
 import { z } from "zod";
+import { getTrackListFlow } from "@/ai/flows/get-track-list-flow";
 
 const formSchema = z.object({
   playlistUrl: z.string().url(),
@@ -11,31 +12,9 @@ type Track = {
   artist: string;
 };
 
-// This is a mock function. In a real application, you would
-// use the Genkit AI flow to fetch and parse the playlist data.
 async function fetchPlaylistData(playlistUrl: string): Promise<Track[]> {
   console.log(`Fetching playlist from: ${playlistUrl}`);
-  
-  // Simulate network delay to mimic an AI call
-  await new Promise(resolve => setTimeout(resolve, 1500));
-
-  // In a real application, this is where you would call your AI flow, for example:
-  // import { getTrackListFlow } from '@/ai/flows/get-track-list';
-  // return await getTrackListFlow(playlistUrl);
-  //
-  // For demonstration purposes, we return mock data.
-  return [
-    { title: "Bohemian Rhapsody", artist: "Queen" },
-    { title: "Stairway to Heaven", artist: "Led Zeppelin" },
-    { title: "Hotel California", artist: "Eagles" },
-    { title: "Like a Rolling Stone", artist: "Bob Dylan" },
-    { title: "Smells Like Teen Spirit", artist: "Nirvana" },
-    { title: "Imagine", artist: "John Lennon" },
-    { title: "One", artist: "U2" },
-    { title: "Billie Jean", artist: "Michael Jackson" },
-    { title: "Hey Jude", artist: "The Beatles" },
-    { title: "Sweet Child O' Mine", artist: "Guns N' Roses" },
-  ].sort(() => 0.5 - Math.random()); // Randomize for variety
+  return await getTrackListFlow(playlistUrl);
 }
 
 
