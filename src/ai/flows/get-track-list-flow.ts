@@ -67,11 +67,14 @@ const getTrackListFlow_flow = ai.defineFlow(
     }
 
     const spotify = await getSpotifyClient();
-    const playlist = await spotify.getPlaylist(playlistId);
+    
+    // Fetch playlist details and all tracks separately
+    const playlistDetails = await spotify.getPlaylistDetails(playlistId);
+    const allTracks = await spotify.getAllPlaylistTracks(playlistId);
 
-    const tracks = playlist.tracks.items
-      .filter((item: any) => item && item.track) // Filter out items that are null or don't have a track object
-      .map((item: any) => ({
+    const formattedTracks = allTracks
+      .filter(item => item.track) // Ensure track object exists
+      .map((item) => ({
         title: item.track.name,
         artist: item.track.artists.map((artist: any) => artist.name).join(', '),
         album: item.track.album.name,
@@ -82,11 +85,11 @@ const getTrackListFlow_flow = ai.defineFlow(
     }));
 
     return {
-        name: playlist.name,
-        owner: playlist.owner,
-        imageUrl: playlist.imageUrl,
-        total: playlist.total,
-        tracks: tracks,
+        name: playlistDetails.name,
+        owner: playlistDetails.owner,
+        imageUrl: playlistDetails.imageUrl,
+        total: playlistDetails.total,
+        tracks: formattedTracks,
     };
   }
 );

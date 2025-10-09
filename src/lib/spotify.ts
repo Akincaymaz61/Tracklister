@@ -7,7 +7,7 @@ class SpotifyClient {
 
   constructor(
     private clientId: string,
-    private clientSecret: string,
+    private clientSecret: string
   ) {}
 
   private async getAccessToken(): Promise<string> {
@@ -42,41 +42,41 @@ class SpotifyClient {
     return this.accessToken;
   }
 
-  public async getPlaylist(playlistId: string): Promise<any> {
+  public async getPlaylistDetails(playlistId: string): Promise<any> {
     const token = await this.getAccessToken();
-    const fields =
-      'name,owner.display_name,images,tracks.total,tracks.next,tracks.items(track(name,artists(name),album(name,release_date,images),duration_ms,explicit))';
-    
-    // Fetch tracks in chunks of 50
-    const limit = 50;
-    const initialUrl = `https://api.spotify.com/v1/playlists/${playlistId}?fields=${fields}&limit=${limit}`;
-    
-    const initialResponse = await fetch(initialUrl, {
-        headers: {
-            Authorization: `Bearer ${token}`,
-        },
+    const fields = 'name,owner.display_name,images,tracks.total';
+    const url = `https://api.spotify.com/v1/playlists/${playlistId}?fields=${fields}`;
+
+    const response = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
     });
 
-    if (!initialResponse.ok) {
-        console.error(await initialResponse.text());
-        throw new Error(`Failed to fetch playlist ${playlistId}`);
+    if (!response.ok) {
+      console.error(await response.text());
+      throw new Error(`Failed to fetch playlist details for ${playlistId}`);
     }
-    
-    const data = await initialResponse.json();
 
-    const playlistData = {
-        name: data.name,
-        owner: data.owner.display_name,
-        imageUrl: data.images?.[0]?.url,
-        total: data.tracks.total,
+    const data = await response.json();
+    return {
+      name: data.name,
+      owner: data.owner.display_name,
+      imageUrl: data.images?.[0]?.url,
+      total: data.tracks.total,
     };
-    
-    let allItems = data.tracks.items;
-    let nextUrl = data.tracks.next;
+  }
 
-    // Fetch subsequent pages if they exist
-    while (nextUrl) {
-      const response = await fetch(nextUrl, {
+  public async getAllPlaylistTracks(playlistId: string): Promise<any[]> {
+    const token = await this.getAccessToken();
+    const fields =
+      'items(track(name,artists(name),album(name,release_date,images),duration_ms,explicit)),next,limit';
+    const limit = 50;
+    let url: string | null = `https://api.spotify.com/v1/playlists/${playlistId}/tracks?fields=${fields}&limit=${limit}`;
+    let allItems: any[] = [];
+
+    while (url) {
+      const response = await fetch(url, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -84,17 +84,15 @@ class SpotifyClient {
 
       if (!response.ok) {
         console.error(await response.text());
-        // In case of an error on a subsequent page, we stop and return what we have so far.
-        console.error(`Failed to fetch next page for playlist ${playlistId}. Partial data will be returned.`);
-        break; 
+        throw new Error(`Failed to fetch tracks for playlist ${playlistId}`);
       }
-      
+
       const pageData = await response.json();
       allItems = allItems.concat(pageData.items);
-      nextUrl = pageData.next;
+      url = pageData.next;
     }
-    
-    return { ...playlistData, tracks: { items: allItems } };
+
+    return allItems;
   }
 }
 
