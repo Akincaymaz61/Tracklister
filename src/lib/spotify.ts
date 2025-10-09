@@ -46,12 +46,10 @@ class SpotifyClient {
     const token = await this.getAccessToken();
     const fields =
       'name,owner.display_name,images,tracks.total,tracks.next,tracks.items(track(name,artists(name),album(name,release_date,images),duration_ms,explicit))';
-    let allItems: any[] = [];
-    let nextUrl: string | null = `https://api.spotify.com/v1/playlists/${playlistId}?fields=${fields}`;
-    let playlistData: any = {};
+    
+    const initialUrl = `https://api.spotify.com/v1/playlists/${playlistId}?fields=${fields}`;
 
-    // Make the initial request to get playlist details and the first page of tracks
-    const initialResponse = await fetch(nextUrl, {
+    const initialResponse = await fetch(initialUrl, {
         headers: {
             Authorization: `Bearer ${token}`,
         },
@@ -62,18 +60,17 @@ class SpotifyClient {
         throw new Error(`Failed to fetch playlist ${playlistId}`);
     }
     
-    const data = await initialResponse.json();
+    const initialData = await initialResponse.json();
 
-    // Store playlist details from the first request
-    playlistData = {
-        name: data.name,
-        owner: data.owner.display_name,
-        imageUrl: data.images?.[0]?.url,
-        total: data.tracks.total,
+    const playlistData = {
+        name: initialData.name,
+        owner: initialData.owner.display_name,
+        imageUrl: initialData.images?.[0]?.url,
+        total: initialData.tracks.total,
     };
     
-    allItems = allItems.concat(data.tracks.items);
-    nextUrl = data.tracks.next;
+    let allItems = initialData.tracks.items;
+    let nextUrl = initialData.tracks.next;
 
     // Fetch subsequent pages if they exist
     while (nextUrl) {
@@ -85,7 +82,6 @@ class SpotifyClient {
 
       if (!response.ok) {
         console.error(await response.text());
-        // Stop pagination on error but return what has been fetched so far
         console.error(`Failed to fetch next page for playlist ${playlistId}. Partial data will be returned.`);
         nextUrl = null; 
         continue;
@@ -96,7 +92,6 @@ class SpotifyClient {
       nextUrl = pageData.next;
     }
     
-    // Combine playlist details with all fetched tracks
     return { ...playlistData, tracks: { items: allItems } };
   }
 }
