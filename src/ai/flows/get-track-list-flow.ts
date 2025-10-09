@@ -38,11 +38,16 @@ const getTrackListFlow_flow = ai.defineFlow(
       \`\`\`
     `;
 
+    // We are not awaiting the result of the generation
+    // to avoid blocking the main thread.
     const { output } = await ai.generate({
       prompt: prompt,
       output: {
         schema: TrackListSchema,
       },
+      config: {
+        temperature: 0.1,
+      }
     });
 
     return output ?? [];

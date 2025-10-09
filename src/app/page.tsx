@@ -4,7 +4,7 @@ import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { Loader2, Music, ListMusic } from "lucide-react";
+import { Loader2, Music, ListMusic, Download } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -58,6 +58,21 @@ export default function Home() {
     }
     
     setIsLoading(false);
+  }
+
+  function downloadTrackList() {
+    const fileContent = tracks
+      .map((track) => `${track.title} - ${track.artist}`)
+      .join("\n");
+    const blob = new Blob([fileContent], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "spotify-playlist.txt";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   }
   
   return (
@@ -118,7 +133,13 @@ export default function Home() {
         <div className="w-full max-w-2xl mt-8">
           <Card className="shadow-lg rounded-lg">
             <CardHeader>
-              <CardTitle className="text-xl">Your Tracks</CardTitle>
+              <div className="flex justify-between items-center">
+                <CardTitle className="text-xl">Your Tracks</CardTitle>
+                <Button variant="outline" size="sm" onClick={downloadTrackList}>
+                  <Download className="mr-2 h-4 w-4" />
+                  Download .txt
+                </Button>
+              </div>
             </CardHeader>
             <CardContent className="p-0">
               <ul className="divide-y divide-border">
