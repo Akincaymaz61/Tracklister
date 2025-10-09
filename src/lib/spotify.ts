@@ -44,8 +44,22 @@ class SpotifyClient {
 
   public async getPlaylist(playlistId: string): Promise<any> {
     const token = await this.getAccessToken();
-    let allItems: any[] = [];
-    let nextUrl: string | null = `https://api.spotify.com/v1/playlists/${playlistId}?fields=name,tracks.items(track(name,artists(name))),tracks.next`;
+    const initialUrl = `https://api.spotify.com/v1/playlists/${playlistId}/tracks?fields=items(track(name,artists(name))),next`;
+
+    const initialResponse = await fetch(initialUrl, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!initialResponse.ok) {
+        console.error(await initialResponse.text());
+        throw new Error(`Failed to fetch playlist ${playlistId}`);
+    }
+
+    const initialData = await initialResponse.json();
+    let allItems: any[] = initialData.items;
+    let nextUrl: string | null = initialData.next;
 
     while (nextUrl) {
       const response = await fetch(nextUrl, {
@@ -56,16 +70,18 @@ class SpotifyClient {
 
       if (!response.ok) {
         console.error(await response.text());
-        throw new Error(`Failed to fetch playlist ${playlistId}`);
+        // If subsequent pages fail, we can decide to either throw or return what we have.
+        // For now, let's throw to indicate an incomplete list.
+        throw new Error(`Failed to fetch subsequent page for playlist ${playlistId}`);
       }
       
       const data = await response.json();
-      allItems = allItems.concat(data.tracks.items);
-      nextUrl = data.tracks.next;
+      allItems = allItems.concat(data.items);
+      nextUrl = data.next;
     }
     
     // The Spotify API returns a paginated list of tracks. We've fetched all pages.
-    // Now we combine them into a single object that looks like the original response.
+    // Now we combine them into a single object that looks like a simplified playlist response.
     return { tracks: { items: allItems } };
   }
 }

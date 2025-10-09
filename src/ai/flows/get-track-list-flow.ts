@@ -54,7 +54,9 @@ const getTrackListFlow_flow = ai.defineFlow(
     const spotify = await getSpotifyClient();
     const response = await spotify.getPlaylist(playlistId);
 
-    const tracks = response.tracks.items.map((item: any) => ({
+    const tracks = response.tracks.items
+      .filter((item: any) => item.track) // Filter out any items without a track object
+      .map((item: any) => ({
         title: item.track.name,
         artist: item.track.artists.map((artist: any) => artist.name).join(', '),
     }));
