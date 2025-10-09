@@ -6,13 +6,14 @@ import Image from "next/image";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { Loader2, Music, ListMusic, Download, Moon, Sun, ShieldAlert } from "lucide-react";
+import { Loader2, Music, ListMusic, Download, Moon, Sun, ShieldAlert, Info } from "lucide-react";
 import {
     Tooltip,
     TooltipContent,
     TooltipProvider,
     TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -148,9 +149,20 @@ export default function Home() {
             Track Lister
           </h1>
         </div>
-        <p className="text-lg text-muted-foreground mb-8">
-          Paste your Spotify playlist URL to instantly get a list of songs and artists.
-        </p>
+        
+        <Alert className="text-left max-w-2xl mx-auto mb-8">
+            <Info className="h-4 w-4" />
+            <AlertTitle>Track Lister Programına Hoş Geldiniz!</AlertTitle>
+            <AlertDescription className="mt-2 space-y-2">
+                <p>
+                Kullanıcılar tarafından oluşturulmuş bir Spotify çalma listesinin bağlantısını, "Paylaş &gt; Çalma Listesi Bağlantısını Kopyala" seçeneğiyle aldıktan sonra buraya yapıştırarak listedeki tüm şarkı ve sanatçı adlarını <code>.txt</code> dosyası olarak indirebilirsiniz.
+                </p>
+                <p>
+                <b>Önemli Not:</b> Spotify tarafından otomatik olarak oluşturulan (örneğin "Daily Mix" gibi) listelerin doğrudan bağlantıları çalışmayabilir. Bu tür bir listeyi indirmek için önce o listeyi kendi çalma listenize aktarın ("Başka bir çalma listesine ekle &gt; Yeni çalma listesi" adımlarını izleyerek) ve ardından oluşturduğunuz yeni listenin bağlantısını kullanın.
+                </p>
+            </AlertDescription>
+        </Alert>
+
       </div>
 
       <Card className="w-full max-w-2xl shadow-lg rounded-lg">
