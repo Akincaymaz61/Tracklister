@@ -28,14 +28,21 @@ const getTrackListFlow_flow = ai.defineFlow(
     outputSchema: TrackListSchema,
   },
   async (playlistUrl) => {
+    const rawHtml = await fetchHtml(playlistUrl);
+    // Pre-process the HTML to extract only the relevant part for the tracks.
+    // This helps the model focus and avoid issues with large HTML files.
+    const mainContentRegex = /<main[^>]*>([\s\S]*?)<\/main>/;
+    const mainContentMatch = rawHtml.match(mainContentRegex);
+    const processedHtml = mainContentMatch ? mainContentMatch[1] : rawHtml;
+
     const prompt = `You are an expert at parsing HTML to extract data.
-      Below is the HTML from a Spotify playlist page.
-      Please extract the title and artist for **ALL** tracks in the playlist.
+      Below is a snippet of HTML from a Spotify playlist page's main content area.
+      Please extract the title and artist for **ALL** tracks in this snippet.
       It is critical that you return every single track and do not truncate the list.
 
-      HTML:
+      HTML Snippet:
       \`\`\`html
-      ${await fetchHtml(playlistUrl)}
+      ${processedHtml}
       \`\`\`
     `;
 
@@ -48,7 +55,7 @@ const getTrackListFlow_flow = ai.defineFlow(
       },
       config: {
         temperature: 0.1,
-      }
+      },
     });
 
     return output ?? [];
