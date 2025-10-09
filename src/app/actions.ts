@@ -30,6 +30,9 @@ export async function getTrackList(playlistUrl: string): Promise<{ data?: Track[
         if (error.message.includes('Authentication failed')) {
             return { error: "Could not authenticate with Spotify. Please check your API credentials in the .env file."};
         }
+        if (error.message.includes('Failed to fetch playlist')) {
+            return { error: "Could not fetch the playlist. Please ensure the URL is correct and the playlist is public." };
+        }
         return { error: `An unexpected error occurred: ${error.message}` };
     }
     return { error: "An unexpected error occurred. Please try again later." };
