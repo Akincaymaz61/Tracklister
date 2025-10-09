@@ -1,4 +1,3 @@
-
 // A simple Spotify client.
 // This is not a complete implementation of the Spotify API, but it's enough for our needs.
 // You can find the full API documentation here: https://developer.spotify.com/documentation/web-api/
