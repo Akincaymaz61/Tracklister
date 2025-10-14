@@ -29,10 +29,12 @@ import { useToast } from "@/hooks/use-toast";
 import { getTrackList } from "./actions";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 
 const formSchema = z.object({
-  playlistUrl: z.string().url({ message: "Please enter a valid Spotify playlist URL." }),
+  playlistUrl: z.string().url({ message: "Please enter a valid playlist URL." }),
+  service: z.enum(["spotify", "youtubemusic"]),
 });
 
 type Track = {
@@ -86,6 +88,7 @@ export default function Home() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       playlistUrl: "",
+      service: "spotify",
     },
   });
 
@@ -93,7 +96,7 @@ export default function Home() {
     setIsLoading(true);
     setPlaylist(null);
 
-    const result = await getTrackList(values.playlistUrl);
+    const result = await getTrackList(values.playlistUrl, values.service);
 
     if (result.error) {
       toast({
@@ -149,7 +152,7 @@ export default function Home() {
           </h1>
         </div>
         <p className="text-lg text-muted-foreground mb-8">
-          Paste your Spotify playlist URL to instantly get a list of songs and artists.
+          Paste your Spotify or YouTube Music playlist URL to instantly get a list of songs and artists.
         </p>
       </div>
 
@@ -165,10 +168,44 @@ export default function Home() {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <FormField
                 control={form.control}
+                name="service"
+                render={({ field }) => (
+                  <FormItem className="space-y-3">
+                    <FormLabel>Select Service</FormLabel>
+                    <FormControl>
+                      <RadioGroup
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                        className="flex flex-col space-y-1"
+                      >
+                        <FormItem className="flex items-center space-x-3 space-y-0">
+                          <FormControl>
+                            <RadioGroupItem value="spotify" />
+                          </FormControl>
+                          <FormLabel className="font-normal">
+                            Spotify
+                          </FormLabel>
+                        </FormItem>
+                        <FormItem className="flex items-center space-x-3 space-y-0">
+                          <FormControl>
+                            <RadioGroupItem value="youtubemusic" />
+                          </FormControl>
+                          <FormLabel className="font-normal">
+                            YouTube Music
+                          </FormLabel>
+                        </FormItem>
+                      </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
                 name="playlistUrl"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Spotify Playlist URL</FormLabel>
+                    <FormLabel>Playlist URL</FormLabel>
                     <FormControl>
                       <Input placeholder="https://open.spotify.com/playlist/..." {...field} />
                     </FormControl>
@@ -190,7 +227,6 @@ export default function Home() {
           </Form>
         </CardContent>
       </Card>
-
       {playlist && playlist.tracks.length > 0 && (
         <div className="w-full max-w-4xl mt-8 flex flex-col lg:flex-row gap-8">
           <div className="lg:w-1/3">

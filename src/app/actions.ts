@@ -2,9 +2,11 @@
 
 import { z } from "zod";
 import { getTrackListFlow } from "@/ai/flows/get-track-list-flow";
+import { getYtMusicTrackListFlow } from "@/ai/flows/get-yt-music-track-list-flow";
 
 const formSchema = z.object({
   playlistUrl: z.string().min(1, { message: "Please enter a URL." }),
+  service: z.enum(["spotify", "youtubemusic"]),
 });
 
 type Track = {
@@ -26,14 +28,24 @@ type Playlist = {
 }
 
 
-export async function getTrackList(playlistUrl: string): Promise<{ data?: Playlist; error?: string }> {
+export async function getTrackList(playlistUrl: string, service: "spotify" | "youtubemusic"): Promise<{ data?: Playlist; error?: string }> {
   try {
-    const validatedUrl = formSchema.safeParse({ playlistUrl });
-    if (!validatedUrl.success) {
-      return { error: "Invalid URL provided. Please enter a complete and valid URL." };
+    const validatedData = formSchema.safeParse({ playlistUrl, service });
+    if (!validatedData.success) {
+      return { error: "Invalid data provided. Please enter a complete and valid URL." };
     }
     
-    const playlist = await getTrackListFlow(validatedUrl.data.playlistUrl);
+    let playlist;
+    switch (service) {
+      case "spotify":
+        playlist = await getTrackListFlow(validatedData.data.playlistUrl);
+        break;
+      case "youtubemusic":
+        playlist = await getYtMusicTrackListFlow(validatedData.data.playlistUrl);
+        break;
+      default:
+        return { error: "Invalid service selected." };
+    }
 
     return { data: playlist };
   } catch (error) {
@@ -41,7 +53,7 @@ export async function getTrackList(playlistUrl: string): Promise<{ data?: Playli
     if (error instanceof Error) {
         // Provide a more user-friendly error message
         if (error.message.includes('Authentication failed')) {
-            return { error: "Could not authenticate with Spotify. Please check your API credentials in the .env file."};
+            return { error: "Could not authenticate with the selected service. Please check your API credentials in the .env file."};
         }
         if (error.message.includes('Failed to fetch playlist')) {
             return { error: "Could not fetch the playlist. Please ensure the URL is correct and the playlist is public." };

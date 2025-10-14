@@ -8,3 +8,4 @@ export const Moon = () => <span>Moon</span>;
 export const Sun = () => <span>Sun</span>;
 export const ShieldAlert = () => <span>ShieldAlert</span>;
 export const Check = () => <span>Check</span>;
+export const Circle = () => <span>Circle</span>;
