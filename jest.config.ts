@@ -13,7 +13,7 @@ const config: Config = {
   // Add more setup options before each test is run
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
   transformIgnorePatterns: [
-    "node_modules/(?!(lucide-react|@radix-ui/react-checkbox)/)"
+    "node_modules/(?!(lucide-react|@radix-ui/react-checkbox|@radix-ui/react-radio-group)/)"
   ],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
