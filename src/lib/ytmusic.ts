@@ -1,3 +1,5 @@
+"use server";
+
 import { Innertube, UniversalCache } from 'youtubei.js';
 
 class YouTubeMusicClient {
@@ -7,21 +9,24 @@ class YouTubeMusicClient {
     this.client = client;
   }
 
+  /**
+   * Fetches a YouTube Music playlist using its ID.
+   * This method is designed to be robust and uses the most direct way to get playlist info
+   * from the youtubei.js library.
+   * @param playlistId The ID of the playlist.
+   * @returns The playlist data.
+   */
   public async getPlaylist(playlistId: string): Promise<any> {
     try {
-      // The getPlaylist method itself returns enough information.
-      // Calling getVideos() and then getInfo() for each is inefficient and can cause errors.
+      // getPlaylist is the most reliable method for this purpose.
+      // It fetches playlist info and a list of videos in a single call.
       const playlist = await this.client.music.getPlaylist(playlistId);
-      
-      // The videos property on the playlist object already contains the tracks.
-      return {
-        info: playlist.info,
-        videos: playlist.videos
-      };
+      return playlist;
       
     } catch (error) {
       console.error(`Failed to fetch YouTube Music playlist ${playlistId}:`, error);
-      throw new Error('Invalid YouTube Music playlist URL or failed to fetch details.');
+      // Re-throw a more user-friendly error to be caught by the action handler.
+      throw new Error('Invalid YouTube Music playlist URL or the playlist is private/unavailable.');
     }
   }
 }
@@ -33,6 +38,7 @@ export async function getYouTubeMusicClient(): Promise<YouTubeMusicClient> {
     return ytMusicClient;
   }
   
+  // Initialize the InnerTube client. Caching is enabled for performance.
   const yt = await Innertube.create({ cache: new UniversalCache() });
   ytMusicClient = new YouTubeMusicClient(yt);
   return ytMusicClient;
