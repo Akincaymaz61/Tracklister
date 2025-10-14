@@ -14,6 +14,7 @@ import {
     TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -27,13 +28,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { getTrackList } from "./actions";
+import { getTrackList, getYoutubeTrackList } from "./actions";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 
 
-const spotifyFormSchema = z.object({
-  playlistUrl: z.string().url({ message: "Please enter a valid Spotify playlist URL." }),
+const formSchema = z.object({
+  playlistUrl: z.string().url({ message: "Please enter a valid playlist URL." }),
 });
 
 type Track = {
@@ -83,18 +84,22 @@ export default function Home() {
   const [excludeExplicit, setExcludeExplicit] = useState(false);
   const { toast } = useToast();
 
-  const spotifyForm = useForm<z.infer<typeof spotifyFormSchema>>({
-    resolver: zodResolver(spotifyFormSchema),
-    defaultValues: {
-      playlistUrl: "",
-    },
+  const spotifyForm = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: { playlistUrl: "" },
   });
 
-  async function onSpotifySubmit(values: z.infer<typeof spotifyFormSchema>) {
+  const youtubeForm = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: { playlistUrl: "" },
+  });
+  
+  async function handleSubmit(values: z.infer<typeof formSchema>, platform: 'spotify' | 'youtube') {
     setIsLoading(true);
     setPlaylist(null);
 
-    const result = await getTrackList(values.playlistUrl);
+    const action = platform === 'spotify' ? getTrackList : getYoutubeTrackList;
+    const result = await action(values.playlistUrl);
 
     if (result.error) {
       toast({
@@ -155,10 +160,10 @@ export default function Home() {
             <AlertTitle>Track Lister Programına Hoş Geldiniz!</AlertTitle>
             <AlertDescription className="mt-2 space-y-2">
                 <p>
-                Kullanıcılar tarafından oluşturulmuş bir Spotify çalma listesinin bağlantısını, "Paylaş &gt; Çalma Listesi Bağlantısını Kopyala" seçeneğiyle aldıktan sonra ilgili sekmeye yapıştırarak listedeki tüm şarkı ve sanatçı adlarını <code>.txt</code> dosyası olarak indirebilirsiniz.
+                Kullanıcılar tarafından oluşturulmuş bir Spotify veya YouTube Music çalma listesinin bağlantısını aldıktan sonra ilgili sekmeye yapıştırarak listedeki tüm şarkı ve sanatçı adlarını <code>.txt</code> dosyası olarak indirebilirsiniz.
                 </p>
                 <p>
-                <b>Önemli Not:</b> Spotify tarafından otomatik olarak oluşturulan (örneğin "Daily Mix" gibi) listelerin doğrudan bağlantıları çalışmayabilir. Bu tür bir listeyi indirmek için önce o listeyi kendi çalma listenize aktarın ("Başka bir çalma listesine ekle &gt; Yeni çalma listesi" adımlarını izleyerek) ve ardından oluşturduğunuz yeni listenin bağlantısını kullanın.
+                <b>Önemli Not:</b> Servisler tarafından otomatik olarak oluşturulan (örneğin "Daily Mix" gibi) listelerin doğrudan bağlantıları çalışmayabilir. Bu tür bir listeyi indirmek için önce o listeyi kendi çalma listenize aktarın ve ardından oluşturduğunuz yeni listenin bağlantısını kullanın.
                 </p>
             </AlertDescription>
         </Alert>
@@ -166,41 +171,74 @@ export default function Home() {
       </div>
 
       <Card className="w-full max-w-2xl shadow-lg rounded-lg">
-          <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-xl">
-              <ListMusic className="w-6 h-6 text-accent" />
-              Import Spotify Playlist
-          </CardTitle>
-          </CardHeader>
-          <CardContent>
-          <Form {...spotifyForm}>
-              <form onSubmit={spotifyForm.handleSubmit(onSpotifySubmit)} className="space-y-6">
-              <FormField
-                  control={spotifyForm.control}
-                  name="playlistUrl"
-                  render={({ field }) => (
-                  <FormItem>
-                      <FormLabel>Spotify Playlist URL</FormLabel>
-                      <FormControl>
-                      <Input placeholder="https://open.spotify.com/playlist/..." {...field} />
-                      </FormControl>
-                      <FormMessage />
-                  </FormItem>
-                  )}
-              />
-              <Button type="submit" className="w-full bg-accent text-accent-foreground hover:bg-accent/90" disabled={isLoading}>
-                  {isLoading ? (
-                  <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Generating...
-                  </>
-                  ) : (
-                  "Get Track List"
-                  )}
-              </Button>
-              </form>
-          </Form>
-          </CardContent>
+        <Tabs defaultValue="spotify" className="w-full">
+            <CardHeader className="p-0 border-b">
+                <TabsList className="grid w-full grid-cols-2 bg-transparent p-0">
+                    <TabsTrigger value="spotify" className="rounded-none rounded-tl-lg h-14 text-base data-[state=active]:bg-accent/10 data-[state=active]:shadow-none data-[state=active]:text-accent-foreground">Spotify</TabsTrigger>
+                    <TabsTrigger value="youtube" className="rounded-none rounded-tr-lg h-14 text-base data-[state=active]:bg-accent/10 data-[state=active]:shadow-none data-[state=active]:text-accent-foreground">YouTube Music</TabsTrigger>
+                </TabsList>
+            </CardHeader>
+            <TabsContent value="spotify">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-xl">
+                        <ListMusic className="w-6 h-6 text-green-500" />
+                        Import Spotify Playlist
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <Form {...spotifyForm}>
+                        <form onSubmit={spotifyForm.handleSubmit((values) => handleSubmit(values, 'spotify'))} className="space-y-6">
+                        <FormField
+                            control={spotifyForm.control}
+                            name="playlistUrl"
+                            render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Spotify Playlist URL</FormLabel>
+                                <FormControl>
+                                <Input placeholder="https://open.spotify.com/playlist/..." {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                            )}
+                        />
+                        <Button type="submit" className="w-full bg-green-500 text-white hover:bg-green-600" disabled={isLoading}>
+                            {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Generating...</> : "Get Track List"}
+                        </Button>
+                        </form>
+                    </Form>
+                </CardContent>
+            </TabsContent>
+            <TabsContent value="youtube">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-xl">
+                        <ListMusic className="w-6 h-6 text-red-500" />
+                        Import YouTube Music Playlist
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <Form {...youtubeForm}>
+                        <form onSubmit={youtubeForm.handleSubmit((values) => handleSubmit(values, 'youtube'))} className="space-y-6">
+                        <FormField
+                            control={youtubeForm.control}
+                            name="playlistUrl"
+                            render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>YouTube Music Playlist URL</FormLabel>
+                                <FormControl>
+                                <Input placeholder="https://music.youtube.com/playlist?list=..." {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                            )}
+                        />
+                        <Button type="submit" className="w-full bg-red-500 text-white hover:bg-red-600" disabled={isLoading}>
+                            {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Generating...</> : "Get Track List"}
+                        </Button>
+                        </form>
+                    </Form>
+                </CardContent>
+            </TabsContent>
+        </Tabs>
       </Card>
 
 
@@ -233,24 +271,24 @@ export default function Home() {
             <Card className="shadow-lg rounded-lg">
                 <CardHeader>
                   <div className="flex justify-between items-center">
-                      <CardTitle className="text-xl">Your Tracks ({playlist.tracks.length})</CardTitle>
+                      <CardTitle className="text-xl">Your Tracks ({playlist.tracks.filter(track => !(excludeExplicit && track.explicit)).length})</CardTitle>
                       <div className="flex items-center gap-4">
                         <div className="flex items-center space-x-2">
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <div className="flex items-center space-x-2">
-                                  <Checkbox id="exclude-explicit" checked={excludeExplicit} onCheckedChange={(checked) => setExcludeExplicit(checked as boolean)} />
-                                  <Label htmlFor="exclude-explicit" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                                    Exclude explicit
-                                  </Label>
-                                </div>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>Does not apply to YouTube Music</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
+                            <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <div className="flex items-center space-x-2">
+                                            <Checkbox id="exclude-explicit" checked={excludeExplicit} onCheckedChange={(checked) => setExcludeExplicit(checked as boolean)} />
+                                            <Label htmlFor="exclude-explicit" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                                Exclude explicit
+                                            </Label>
+                                        </div>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p>Does not apply to YouTube Music</p>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
                         </div>
                         <Button variant="outline" size="sm" onClick={downloadTrackList}>
                           <Download className="mr-2 h-4 w-4" />

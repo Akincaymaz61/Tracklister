@@ -1,19 +1,15 @@
-import YTMusic from 'ytmusic-api';
+import { Innertube, UniversalCache } from 'youtubei.js';
 
 class YouTubeMusicClient {
-  private client: YTMusic;
+  private client: Innertube;
 
-  constructor() {
-    this.client = new YTMusic();
-  }
-
-  public async initialize() {
-    await this.client.initialize();
+  constructor(client: Innertube) {
+    this.client = client;
   }
 
   public async getPlaylist(playlistId: string): Promise<any> {
     try {
-      const playlist = await this.client.getPlaylist(playlistId);
+      const playlist = await this.client.music.getPlaylist(playlistId);
       return playlist;
     } catch (error) {
       console.error(`Failed to fetch YouTube Music playlist ${playlistId}:`, error);
@@ -29,7 +25,7 @@ export async function getYouTubeMusicClient(): Promise<YouTubeMusicClient> {
     return ytMusicClient;
   }
   
-  ytMusicClient = new YouTubeMusicClient();
-  await ytMusicClient.initialize();
+  const yt = await Innertube.create({ cache: new UniversalCache() });
+  ytMusicClient = new YouTubeMusicClient(yt);
   return ytMusicClient;
 }

@@ -6,7 +6,7 @@
  */
 
 import { ai } from "@/ai/genkit";
-import { z } from "genkit";
+import { z } from "zod";
 import { getYouTubeMusicClient } from "@/lib/ytmusic";
 
 const TrackSchema = z.object({
@@ -60,21 +60,21 @@ const getYoutubeTrackListFlow_flow = ai.defineFlow(
     const ytMusic = await getYouTubeMusicClient();
     const playlist = await ytMusic.getPlaylist(playlistId);
 
-    const formattedTracks = playlist.tracks.map((track: any) => ({
+    const formattedTracks = playlist.videos.map((track: any) => ({
         title: track.title,
         artist: track.artists?.map((a: any) => a.name).join(', ') || 'Unknown Artist',
         album: track.album?.name || 'Unknown Album',
-        duration: (track.duration || 0) * 1000, // duration is in seconds, convert to ms
-        releaseDate: '', // Not provided by this API
+        duration: track.duration.seconds * 1000,
+        releaseDate: '', // Not easily available
         albumArtUrl: track.thumbnails?.at(-1)?.url,
-        explicit: track.isExplicit || false,
+        explicit: track.is_explicit || false,
     }));
 
     return {
-        name: playlist.title,
-        owner: playlist.author || 'Unknown',
-        imageUrl: playlist.thumbnails?.at(-1)?.url,
-        total: playlist.trackCount,
+        name: playlist.info.title,
+        owner: playlist.info.author,
+        imageUrl: playlist.info.thumbnails?.at(-1)?.url,
+        total: playlist.info.total_item_count,
         tracks: formattedTracks,
     };
   }
