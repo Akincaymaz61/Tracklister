@@ -198,7 +198,7 @@ export default function Home() {
       <Tabs defaultValue="spotify" className="w-full max-w-2xl">
         <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="spotify" className="gap-2"><Music className="w-4 h-4" /> Spotify</TabsTrigger>
-            <TabsTrigger value="youtube" className="gap-2" disabled><Youtube className="w-4 h-4" /> YouTube Music</TabsTrigger>
+            <TabsTrigger value="youtube" className="gap-2"><Youtube className="w-4 h-4" /> YouTube Music</TabsTrigger>
         </TabsList>
         <TabsContent value="spotify">
             <Card className="shadow-lg rounded-lg">
@@ -263,7 +263,7 @@ export default function Home() {
                         </FormItem>
                         )}
                     />
-                    <Button type="submit" className="w-full bg-accent text-accent-foreground hover:bg-accent/90" disabled={true}>
+                    <Button type="submit" className="w-full bg-accent text-accent-foreground hover:bg-accent/90" disabled={isLoading}>
                         {isLoading ? (
                         <>
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
