@@ -55,12 +55,25 @@ const getYoutubeTrackListFlow_flow = ai.defineFlow(
     const ytMusic = await getYouTubeMusicClient();
     const playlist = await ytMusic.getPlaylist(playlistId);
 
+    if (!playlist || !playlist.videos) {
+      throw new Error("Could not retrieve playlist videos.");
+    }
+
     const formattedTracks = playlist.videos
-      .filter((track: any) => track) // Filter out any undefined/null tracks
-      .map((track: any) => ({
-        title: track.title,
-        artist: track.artists?.map((a: any) => a.name).join(', ') || 'Unknown Artist',
-    }));
+      .filter((track: any) => track && track.title) // Filter out any undefined/null tracks or tracks without a title
+      .map((track: any) => {
+        let artistName = 'Unknown Artist';
+        if (track.artists && track.artists.length > 0) {
+            artistName = track.artists.map((a: any) => a.name).join(', ');
+        } else if (track.author) {
+            artistName = Array.isArray(track.author) ? track.author.join(', ') : track.author;
+        }
+
+        return {
+          title: track.title,
+          artist: artistName,
+        }
+      });
 
     return {
         name: playlist.info.title || 'YouTube Music Playlist',
