@@ -78,9 +78,9 @@ const getYoutubeTrackListFlow_flow = ai.defineFlow(
         if (track.artists && Array.isArray(track.artists) && track.artists.length > 0) {
             // Prefer the `artists` array if it exists and is not empty.
             artistName = track.artists.map((a: any) => a.name).join(', ');
-        } else if (track.author) {
-            // Fallback to the `author` field.
-            artistName = Array.isArray(track.author) ? track.author.join(', ') : track.author;
+        } else if (track.author && typeof track.author === 'string') {
+            // Fallback to the `author` field if it's a string.
+            artistName = track.author;
         }
 
         return {
