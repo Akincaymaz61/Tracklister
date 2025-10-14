@@ -211,7 +211,11 @@ export default function Home() {
                 <CardContent>
                     <div className="flex justify-between items-center text-sm text-muted-foreground">
                         <span>Total tracks</span>
-                        <span className="font-bold">{playlist.total}</span>
+                        <span className="font-bold">
+                            {excludeExplicit
+                                ? playlist.tracks.filter(track => !track.explicit).length
+                                : playlist.tracks.length}
+                        </span>
                     </div>
                 </CardContent>
             </Card>
