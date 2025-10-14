@@ -64,8 +64,8 @@ const getYoutubeTrackListFlow_flow = ai.defineFlow(
         title: track.title,
         artist: track.artists?.map((a: any) => a.name).join(', ') || 'Unknown Artist',
         album: track.album?.name || 'Unknown Album',
-        duration: track.duration.seconds * 1000,
-        releaseDate: '', // Not easily available
+        duration: (track.duration.seconds || 0) * 1000,
+        releaseDate: '', // Not easily available from this API response
         albumArtUrl: track.thumbnails?.at(-1)?.url,
         explicit: track.is_explicit || false,
     }));
@@ -74,7 +74,7 @@ const getYoutubeTrackListFlow_flow = ai.defineFlow(
         name: playlist.info.title,
         owner: playlist.info.author,
         imageUrl: playlist.info.thumbnails?.at(-1)?.url,
-        total: playlist.info.total_item_count,
+        total: playlist.info.total_item_count || formattedTracks.length,
         tracks: formattedTracks,
     };
   }
