@@ -60,7 +60,9 @@ const getYoutubeTrackListFlow_flow = ai.defineFlow(
     const ytMusic = await getYouTubeMusicClient();
     const playlist = await ytMusic.getPlaylist(playlistId);
 
-    const formattedTracks = playlist.videos.map((track: any) => ({
+    const formattedTracks = playlist.videos
+      .filter((track: any) => track) // Filter out any undefined/null tracks
+      .map((track: any) => ({
         title: track.title,
         artist: track.artists?.map((a: any) => a.name).join(', ') || 'Unknown Artist',
         album: track.album?.name || 'Unknown Album',
@@ -71,8 +73,8 @@ const getYoutubeTrackListFlow_flow = ai.defineFlow(
     }));
 
     return {
-        name: playlist.info.title,
-        owner: playlist.info.author,
+        name: playlist.info.title || 'YouTube Music Playlist',
+        owner: playlist.info.author || 'Unknown Owner',
         imageUrl: playlist.info.thumbnails?.at(-1)?.url,
         total: playlist.info.total_item_count || formattedTracks.length,
         tracks: formattedTracks,
