@@ -7,7 +7,7 @@
 
 import { ai } from "@/ai/genkit";
 import { z } from "genkit";
-// import { getYouTubeMusicClient } from "@/lib/ytmusic";
+import { getYouTubeMusicClient } from "@/lib/ytmusic";
 
 const TrackSchema = z.object({
   title: z.string().describe("The title of the track."),
@@ -57,26 +57,25 @@ const getYoutubeTrackListFlow_flow = ai.defineFlow(
       throw new Error("Invalid YouTube Music playlist URL.");
     }
     
-    // const ytMusic = await getYouTubeMusicClient();
-    // const playlist = await ytMusic.getPlaylist(playlistId);
+    const ytMusic = await getYouTubeMusicClient();
+    const playlist = await ytMusic.getPlaylist(playlistId);
 
-    // const formattedTracks = playlist.tracks.map((track: any) => ({
-    //     title: track.title,
-    //     artist: track.artists?.map((a: any) => a.name).join(', ') || 'Unknown Artist',
-    //     album: track.album?.name || 'Unknown Album',
-    //     duration: track.duration, // duration is in seconds, convert to ms
-    //     releaseDate: '', // Not provided by this API
-    //     albumArtUrl: track.thumbnails?.at(-1)?.url,
-    //     explicit: track.isExplicit || false,
-    // }));
+    const formattedTracks = playlist.tracks.map((track: any) => ({
+        title: track.title,
+        artist: track.artists?.map((a: any) => a.name).join(', ') || 'Unknown Artist',
+        album: track.album?.name || 'Unknown Album',
+        duration: (track.duration || 0) * 1000, // duration is in seconds, convert to ms
+        releaseDate: '', // Not provided by this API
+        albumArtUrl: track.thumbnails?.at(-1)?.url,
+        explicit: track.isExplicit || false,
+    }));
 
-    // return {
-    //     name: playlist.title,
-    //     owner: playlist.author || 'Unknown',
-    //     imageUrl: playlist.thumbnails?.at(-1)?.url,
-    //     total: playlist.trackCount,
-    //     tracks: formattedTracks,
-    // };
-    throw new Error("YouTube Music feature is temporarily disabled.");
+    return {
+        name: playlist.title,
+        owner: playlist.author || 'Unknown',
+        imageUrl: playlist.thumbnails?.at(-1)?.url,
+        total: playlist.trackCount,
+        tracks: formattedTracks,
+    };
   }
 );
