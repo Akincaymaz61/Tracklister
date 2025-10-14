@@ -2,9 +2,14 @@
 
 import { z } from "zod";
 import { getTrackListFlow } from "@/ai/flows/get-track-list-flow";
+// import { getYoutubeTrackListFlow } from "@/ai/flows/get-yt-track-list-flow";
 
-const formSchema = z.object({
+const spotifyFormSchema = z.object({
   playlistUrl: z.string().min(1, { message: "Please enter a URL." }),
+});
+
+const youtubeFormSchema = z.object({
+    playlistUrl: z.string().min(1, { message: "Please enter a URL." }),
 });
 
 type Track = {
@@ -28,7 +33,7 @@ type Playlist = {
 
 export async function getTrackList(playlistUrl: string): Promise<{ data?: Playlist; error?: string }> {
   try {
-    const validatedUrl = formSchema.safeParse({ playlistUrl });
+    const validatedUrl = spotifyFormSchema.safeParse({ playlistUrl });
     if (!validatedUrl.success) {
       return { error: "Invalid URL provided. Please enter a complete and valid URL." };
     }
@@ -51,3 +56,26 @@ export async function getTrackList(playlistUrl: string): Promise<{ data?: Playli
     return { error: "An unexpected error occurred. Please try again later." };
   }
 }
+
+export async function getYoutubeTrackList(playlistUrl: string): Promise<{ data?: Playlist; error?: string }> {
+    try {
+      const validatedUrl = youtubeFormSchema.safeParse({ playlistUrl });
+      if (!validatedUrl.success) {
+        return { error: "Invalid URL provided. Please enter a complete and valid URL." };
+      }
+      
+      // const playlist = await getYoutubeTrackListFlow(validatedUrl.data.playlistUrl);
+  
+      // return { data: playlist };
+      return { error: "YouTube Music support is temporarily disabled while we fix a dependency issue. Please try again later." };
+    } catch (error) {
+      console.error(error);
+      if (error instanceof Error) {
+          if (error.message.includes('Invalid YouTube Music playlist URL')) {
+              return { error: "Invalid YouTube Music playlist URL. Please check the URL and try again."};
+          }
+          return { error: `An unexpected error occurred: ${error.message}` };
+      }
+      return { error: "An unexpected error occurred. Please try again later." };
+    }
+  }

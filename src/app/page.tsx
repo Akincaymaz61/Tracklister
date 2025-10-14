@@ -6,7 +6,7 @@ import Image from "next/image";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { Loader2, Music, ListMusic, Download, Moon, Sun, ShieldAlert, Info } from "lucide-react";
+import { Loader2, Music, ListMusic, Download, Moon, Sun, ShieldAlert, Info, Youtube } from "lucide-react";
 import {
     Tooltip,
     TooltipContent,
@@ -14,6 +14,7 @@ import {
     TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -27,13 +28,17 @@ import {
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { getTrackList } from "./actions";
+import { getTrackList, getYoutubeTrackList } from "./actions";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 
 
-const formSchema = z.object({
+const spotifyFormSchema = z.object({
   playlistUrl: z.string().url({ message: "Please enter a valid Spotify playlist URL." }),
+});
+
+const youtubeFormSchema = z.object({
+  playlistUrl: z.string().url({ message: "Please enter a valid YouTube Music playlist URL." }),
 });
 
 type Track = {
@@ -83,18 +88,50 @@ export default function Home() {
   const [excludeExplicit, setExcludeExplicit] = useState(false);
   const { toast } = useToast();
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  const spotifyForm = useForm<z.infer<typeof spotifyFormSchema>>({
+    resolver: zodResolver(spotifyFormSchema),
     defaultValues: {
       playlistUrl: "",
     },
   });
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
+  const youtubeForm = useForm<z.infer<typeof youtubeFormSchema>>({
+    resolver: zodResolver(youtubeFormSchema),
+    defaultValues: {
+        playlistUrl: "",
+    },
+  });
+
+  async function onSpotifySubmit(values: z.infer<typeof spotifyFormSchema>) {
     setIsLoading(true);
     setPlaylist(null);
 
     const result = await getTrackList(values.playlistUrl);
+
+    if (result.error) {
+      toast({
+        variant: "destructive",
+        title: "An error occurred",
+        description: result.error,
+      });
+    } else if (result.data) {
+      setPlaylist(result.data);
+      if (result.data.tracks.length === 0) {
+        toast({
+            title: "No tracks found",
+            description: "Could not find any tracks. The playlist might be empty or private.",
+        });
+      }
+    }
+    
+    setIsLoading(false);
+  }
+  
+  async function onYoutubeSubmit(values: z.infer<typeof youtubeFormSchema>) {
+    setIsLoading(true);
+    setPlaylist(null);
+
+    const result = await getYoutubeTrackList(values.playlistUrl);
 
     if (result.error) {
       toast({
@@ -150,12 +187,12 @@ export default function Home() {
           </h1>
         </div>
         
-        <Alert className="text-left max-w-2xl mx-auto mb-8">
+        <Alert className="text-left max-w-3xl mx-auto mb-8">
             <Info className="h-4 w-4" />
             <AlertTitle>Track Lister Programına Hoş Geldiniz!</AlertTitle>
             <AlertDescription className="mt-2 space-y-2">
                 <p>
-                Kullanıcılar tarafından oluşturulmuş bir Spotify çalma listesinin bağlantısını, "Paylaş &gt; Çalma Listesi Bağlantısını Kopyala" seçeneğiyle aldıktan sonra buraya yapıştırarak listedeki tüm şarkı ve sanatçı adlarını <code>.txt</code> dosyası olarak indirebilirsiniz.
+                Kullanıcılar tarafından oluşturulmuş bir Spotify veya YouTube Music çalma listesinin bağlantısını, "Paylaş &gt; Çalma Listesi Bağlantısını Kopyala" seçeneğiyle aldıktan sonra ilgili sekmeye yapıştırarak listedeki tüm şarkı ve sanatçı adlarını <code>.txt</code> dosyası olarak indirebilirsiniz.
                 </p>
                 <p>
                 <b>Önemli Not:</b> Spotify tarafından otomatik olarak oluşturulan (örneğin "Daily Mix" gibi) listelerin doğrudan bağlantıları çalışmayabilir. Bu tür bir listeyi indirmek için önce o listeyi kendi çalma listenize aktarın ("Başka bir çalma listesine ekle &gt; Yeni çalma listesi" adımlarını izleyerek) ve ardından oluşturduğunuz yeni listenin bağlantısını kullanın.
@@ -165,43 +202,91 @@ export default function Home() {
 
       </div>
 
-      <Card className="w-full max-w-2xl shadow-lg rounded-lg">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-xl">
-            <ListMusic className="w-6 h-6 text-accent" />
-            Import Playlist
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <FormField
-                control={form.control}
-                name="playlistUrl"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Spotify Playlist URL</FormLabel>
-                    <FormControl>
-                      <Input placeholder="https://open.spotify.com/playlist/..." {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <Button type="submit" className="w-full bg-accent text-accent-foreground hover:bg-accent/90" disabled={isLoading}>
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Generating...
-                  </>
-                ) : (
-                  "Get Track List"
-                )}
-              </Button>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
+      <Tabs defaultValue="spotify" className="w-full max-w-2xl">
+        <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="spotify" className="gap-2"><Music className="w-4 h-4" /> Spotify</TabsTrigger>
+            <TabsTrigger value="youtube" className="gap-2" disabled><Youtube className="w-4 h-4" /> YouTube Music</TabsTrigger>
+        </TabsList>
+        <TabsContent value="spotify">
+            <Card className="shadow-lg rounded-lg">
+                <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-xl">
+                    <ListMusic className="w-6 h-6 text-accent" />
+                    Import Spotify Playlist
+                </CardTitle>
+                </CardHeader>
+                <CardContent>
+                <Form {...spotifyForm}>
+                    <form onSubmit={spotifyForm.handleSubmit(onSpotifySubmit)} className="space-y-6">
+                    <FormField
+                        control={spotifyForm.control}
+                        name="playlistUrl"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Spotify Playlist URL</FormLabel>
+                            <FormControl>
+                            <Input placeholder="https://open.spotify.com/playlist/..." {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                    <Button type="submit" className="w-full bg-accent text-accent-foreground hover:bg-accent/90" disabled={isLoading}>
+                        {isLoading ? (
+                        <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Generating...
+                        </>
+                        ) : (
+                        "Get Track List"
+                        )}
+                    </Button>
+                    </form>
+                </Form>
+                </CardContent>
+            </Card>
+        </TabsContent>
+        <TabsContent value="youtube">
+            <Card className="shadow-lg rounded-lg">
+                <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-xl">
+                    <ListMusic className="w-6 h-6 text-accent" />
+                    Import YouTube Music Playlist
+                </CardTitle>
+                </CardHeader>
+                <CardContent>
+                <Form {...youtubeForm}>
+                    <form onSubmit={youtubeForm.handleSubmit(onYoutubeSubmit)} className="space-y-6">
+                    <FormField
+                        control={youtubeForm.control}
+                        name="playlistUrl"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>YouTube Music Playlist URL</FormLabel>
+                            <FormControl>
+                            <Input placeholder="https://music.youtube.com/playlist?list=..." {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                    <Button type="submit" className="w-full bg-accent text-accent-foreground hover:bg-accent/90" disabled={true}>
+                        {isLoading ? (
+                        <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Generating...
+                        </>
+                        ) : (
+                        "Get Track List"
+                        )}
+                    </Button>
+                    </form>
+                </Form>
+                </CardContent>
+            </Card>
+        </TabsContent>
+      </Tabs>
+
 
       {playlist && playlist.tracks.length > 0 && (
         <div className="w-full max-w-4xl mt-8 flex flex-col lg:flex-row gap-8">
@@ -235,10 +320,21 @@ export default function Home() {
                       <CardTitle className="text-xl">Your Tracks ({playlist.tracks.length})</CardTitle>
                       <div className="flex items-center gap-4">
                         <div className="flex items-center space-x-2">
-                          <Checkbox id="exclude-explicit" checked={excludeExplicit} onCheckedChange={(checked) => setExcludeExplicit(checked as boolean)} />
-                          <Label htmlFor="exclude-explicit" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                            Exclude explicit
-                          </Label>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className="flex items-center space-x-2">
+                                  <Checkbox id="exclude-explicit" checked={excludeExplicit} onCheckedChange={(checked) => setExcludeExplicit(checked as boolean)} />
+                                  <Label htmlFor="exclude-explicit" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                    Exclude explicit
+                                  </Label>
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Does not apply to YouTube Music</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
                         </div>
                         <Button variant="outline" size="sm" onClick={downloadTrackList}>
                           <Download className="mr-2 h-4 w-4" />
@@ -310,5 +406,3 @@ export default function Home() {
     </main>
   );
 }
-
-    
