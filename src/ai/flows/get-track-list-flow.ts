@@ -12,11 +12,6 @@ import { getSpotifyClient } from "@/lib/spotify";
 const TrackSchema = z.object({
   title: z.string().describe("The title of the track."),
   artist: z.string().describe("The primary artist of the track."),
-  album: z.string().describe("The album name."),
-  duration: z.number().describe("The duration of the track in milliseconds."),
-  releaseDate: z.string().describe("The release date of the album."),
-  albumArtUrl: z.string().optional().describe("The URL of the album art."),
-  explicit: z.boolean().describe("Whether the track is explicit."),
 });
 
 const PlaylistSchema = z.object({
@@ -77,11 +72,6 @@ const getTrackListFlow_flow = ai.defineFlow(
       .map((item) => ({
         title: item.track.name,
         artist: item.track.artists.map((artist: any) => artist.name).join(', '),
-        album: item.track.album.name,
-        duration: item.track.duration_ms,
-        releaseDate: item.track.album.release_date,
-        albumArtUrl: item.track.album.images?.[0]?.url,
-        explicit: item.track.explicit,
     }));
 
     return {

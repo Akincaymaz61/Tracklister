@@ -6,13 +6,7 @@ import Image from "next/image";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { Loader2, Music, ListMusic, Download, Moon, Sun, ShieldAlert, Info } from "lucide-react";
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
-} from "@/components/ui/tooltip"
+import { Loader2, Music, ListMusic, Download, Moon, Sun, Info } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -29,8 +23,6 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { getTrackList, getYoutubeTrackList } from "./actions";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
 
 
 const formSchema = z.object({
@@ -40,11 +32,6 @@ const formSchema = z.object({
 type Track = {
   title: string;
   artist: string;
-  album: string;
-  duration: number;
-  releaseDate: string;
-  albumArtUrl?: string;
-  explicit: boolean;
 };
 
 type Playlist = {
@@ -54,13 +41,6 @@ type Playlist = {
     total: number;
     tracks: Track[];
 }
-
-// Helper to format milliseconds into MM:SS
-const formatDuration = (ms: number) => {
-    const minutes = Math.floor(ms / 60000);
-    const seconds = ((ms % 60000) / 1000).toFixed(0);
-    return `${minutes}:${seconds.padStart(2, '0')}`;
-};
 
 function ThemeToggle() {
     const { theme, setTheme } = useTheme();
@@ -81,7 +61,6 @@ function ThemeToggle() {
 export default function Home() {
   const [playlist, setPlaylist] = useState<Playlist | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [excludeExplicit, setExcludeExplicit] = useState(false);
   const { toast } = useToast();
 
   const spotifyForm = useForm<z.infer<typeof formSchema>>({
@@ -122,9 +101,7 @@ export default function Home() {
 
   function downloadTrackList() {
     if (!playlist) return;
-    const tracksToDownload = excludeExplicit
-      ? playlist.tracks.filter(track => !track.explicit)
-      : playlist.tracks;
+    const tracksToDownload = playlist.tracks;
 
     const fileContent = tracksToDownload
       .map((track) => `${track.title} - ${track.artist}`)
@@ -271,25 +248,8 @@ export default function Home() {
             <Card className="shadow-lg rounded-lg">
                 <CardHeader>
                   <div className="flex justify-between items-center">
-                      <CardTitle className="text-xl">Your Tracks ({playlist.tracks.filter(track => !(excludeExplicit && track.explicit)).length})</CardTitle>
+                      <CardTitle className="text-xl">Your Tracks ({playlist.tracks.length})</CardTitle>
                       <div className="flex items-center gap-4">
-                        <div className="flex items-center space-x-2">
-                            <TooltipProvider>
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <div className="flex items-center space-x-2">
-                                            <Checkbox id="exclude-explicit" checked={excludeExplicit} onCheckedChange={(checked) => setExcludeExplicit(checked as boolean)} />
-                                            <Label htmlFor="exclude-explicit" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                                                Exclude explicit
-                                            </Label>
-                                        </div>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                        <p>Does not apply to YouTube Music</p>
-                                    </TooltipContent>
-                                </Tooltip>
-                            </TooltipProvider>
-                        </div>
                         <Button variant="outline" size="sm" onClick={downloadTrackList}>
                           <Download className="mr-2 h-4 w-4" />
                           Download .txt
@@ -300,53 +260,19 @@ export default function Home() {
                 <CardContent className="p-0">
                 <div className="max-h-[600px] overflow-y-auto">
                     <ul className="divide-y divide-border">
-                        {playlist.tracks.filter(track => !(excludeExplicit && track.explicit)).map((track, index) => (
+                        {playlist.tracks.map((track, index) => (
                         <li 
                             key={index}
                             className="p-3 flex items-center gap-4 animate-fade-in opacity-0"
                             style={{ animationDelay: `${index * 30}ms` }}
                         >
-                            {track.albumArtUrl ? (
-                                <Image 
-                                    src={track.albumArtUrl}
-                                    alt={`Album art for ${track.album}`}
-                                    width={48}
-                                    height={48}
-                                    className="rounded-md w-12 h-12 flex-shrink-0"
-                                />
-                            ) : (
-                                <div className="bg-muted text-muted-foreground rounded-md h-12 w-12 flex-shrink-0 flex items-center justify-center font-bold text-sm">
-                                    <Music className="w-6 h-6" />
-                                </div>
-                            )}
-
-                            <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-x-4">
-                                <div className="flex items-center gap-2">
-                                    {track.explicit && (
-                                      <TooltipProvider>
-                                        <Tooltip>
-                                          <TooltipTrigger>
-                                            <ShieldAlert className="w-4 h-4 text-muted-foreground" />
-                                          </TooltipTrigger>
-                                          <TooltipContent>
-                                            <p>Explicit</p>
-                                          </TooltipContent>
-                                        </Tooltip>
-                                      </TooltipProvider>
-                                    )}
-                                    <p className="font-semibold text-foreground truncate">{track.title}</p>
-                                </div>
-                                <p className="text-sm text-muted-foreground truncate sm:hidden">{track.artist}</p>
-                                <div className="hidden sm:block">
-                                    <p className="text-sm text-muted-foreground truncate">{track.artist}</p>
-                                </div>
-                                <div className="hidden sm:block">
-                                    <p className="text-sm text-foreground truncate">{track.album}</p>
-                                    <p className="text-xs text-muted-foreground">{track.releaseDate}</p>
-                                </div>
+                            <div className="bg-muted text-muted-foreground rounded-md h-12 w-12 flex-shrink-0 flex items-center justify-center font-bold text-sm">
+                                <Music className="w-6 h-6" />
                             </div>
-                            <div className="text-sm text-muted-foreground font-mono ml-auto">
-                                {formatDuration(track.duration)}
+
+                            <div className="flex-1 grid grid-cols-1">
+                                <p className="font-semibold text-foreground truncate">{track.title}</p>
+                                <p className="text-sm text-muted-foreground truncate">{track.artist}</p>
                             </div>
                         </li>
                         ))}

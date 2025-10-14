@@ -11,11 +11,6 @@ const formSchema = z.object({
 type Track = {
   title: string;
   artist: string;
-  album: string;
-  duration: number;
-  releaseDate: string;
-  albumArtUrl?: string;
-  explicit: boolean;
 };
 
 type Playlist = {

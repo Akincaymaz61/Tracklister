@@ -12,11 +12,6 @@ import { getYouTubeMusicClient } from "@/lib/ytmusic";
 const TrackSchema = z.object({
   title: z.string().describe("The title of the track."),
   artist: z.string().describe("The primary artist of the track."),
-  album: z.string().describe("The album name."),
-  duration: z.number().describe("The duration of the track in milliseconds."),
-  releaseDate: z.string().describe("The release date of the album."),
-  albumArtUrl: z.string().optional().describe("The URL of the album art."),
-  explicit: z.boolean().describe("Whether the track is explicit."),
 });
 
 const PlaylistSchema = z.object({
@@ -65,11 +60,6 @@ const getYoutubeTrackListFlow_flow = ai.defineFlow(
       .map((track: any) => ({
         title: track.title,
         artist: track.artists?.map((a: any) => a.name).join(', ') || 'Unknown Artist',
-        album: track.album?.name || 'Unknown Album',
-        duration: (track.duration.seconds || 0) * 1000,
-        releaseDate: '', // Not easily available from this API response
-        albumArtUrl: track.thumbnails?.at(-1)?.url,
-        explicit: track.is_explicit || false,
     }));
 
     return {
