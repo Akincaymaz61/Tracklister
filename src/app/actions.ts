@@ -58,24 +58,5 @@ export async function getTrackList(playlistUrl: string): Promise<{ data?: Playli
 }
 
 export async function getYoutubeTrackList(playlistUrl: string): Promise<{ data?: Playlist; error?: string }> {
-    try {
-    //   const validatedUrl = youtubeFormSchema.safeParse({ playlistUrl });
-    //   if (!validatedUrl.success) {
-    //     return { error: "Invalid URL provided. Please enter a complete and valid URL." };
-    //   }
-      
-    //   const playlist = await getYoutubeTrackListFlow(validatedUrl.data.playlistUrl);
-  
-    //   return { data: playlist };
-      return { error: "YouTube Music feature is temporarily disabled due to a technical issue. We are working on it." };
-    } catch (error) {
-      console.error(error);
-      if (error instanceof Error) {
-          if (error.message.includes('Invalid YouTube Music playlist URL')) {
-              return { error: "Invalid YouTube Music playlist URL. Please check the URL and try again."};
-          }
-          return { error: `An unexpected error occurred: ${error.message}` };
-      }
-      return { error: "An unexpected error occurred. Please try again later." };
-    }
-  }
+    return { error: "YouTube Music feature is temporarily disabled due to a technical issue. We are working on it." };
+}

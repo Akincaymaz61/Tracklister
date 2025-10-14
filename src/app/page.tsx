@@ -139,15 +139,8 @@ export default function Home() {
         title: "An error occurred",
         description: result.error,
       });
-    } else if (result.data) {
-      setPlaylist(result.data);
-      if (result.data.tracks.length === 0) {
-        toast({
-            title: "No tracks found",
-            description: "Could not find any tracks. The playlist might be empty or private.",
-        });
-      }
     }
+    // Since the feature is disabled, we don't expect data
     
     setIsLoading(false);
   }
