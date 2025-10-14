@@ -57,36 +57,26 @@ const getYoutubeTrackListFlow_flow = ai.defineFlow(
       throw new Error("Invalid YouTube Music playlist URL.");
     }
     
-    console.log("YouTube Music support is temporarily disabled.");
-    
-    return {
-        name: "YouTube Music Playlist",
-        owner: 'Unknown',
-        imageUrl: '',
-        total: 0,
-        tracks: [],
-    };
-    /*
-    const ytMusic = await getYouTubeMusicClient();
-    const playlist = await ytMusic.getPlaylist(playlistId);
+    // const ytMusic = await getYouTubeMusicClient();
+    // const playlist = await ytMusic.getPlaylist(playlistId);
 
-    const formattedTracks = playlist.tracks.map((track: any) => ({
-        title: track.title,
-        artist: track.artists?.map((a: any) => a.name).join(', ') || 'Unknown Artist',
-        album: track.album?.name || 'Unknown Album',
-        duration: track.duration,
-        releaseDate: '', // Not provided by this API
-        albumArtUrl: track.thumbnails?.at(-1)?.url,
-        explicit: track.isExplicit || false,
-    }));
+    // const formattedTracks = playlist.tracks.map((track: any) => ({
+    //     title: track.title,
+    //     artist: track.artists?.map((a: any) => a.name).join(', ') || 'Unknown Artist',
+    //     album: track.album?.name || 'Unknown Album',
+    //     duration: track.duration, // duration is in seconds, convert to ms
+    //     releaseDate: '', // Not provided by this API
+    //     albumArtUrl: track.thumbnails?.at(-1)?.url,
+    //     explicit: track.isExplicit || false,
+    // }));
 
-    return {
-        name: playlist.title,
-        owner: playlist.author || 'Unknown',
-        imageUrl: playlist.thumbnails?.at(-1)?.url,
-        total: playlist.trackCount,
-        tracks: formattedTracks,
-    };
-    */
+    // return {
+    //     name: playlist.title,
+    //     owner: playlist.author || 'Unknown',
+    //     imageUrl: playlist.thumbnails?.at(-1)?.url,
+    //     total: playlist.trackCount,
+    //     tracks: formattedTracks,
+    // };
+    throw new Error("YouTube Music feature is temporarily disabled.");
   }
 );

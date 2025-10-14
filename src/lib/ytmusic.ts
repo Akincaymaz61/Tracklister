@@ -1,7 +1,7 @@
 // import YTMusic from 'ytmusic-api';
 
 class YouTubeMusicClient {
-  private client: any; //YTMusic;
+  // private client: YTMusic;
 
   constructor() {
     // this.client = new YTMusic();
@@ -15,8 +15,7 @@ class YouTubeMusicClient {
     try {
       // const playlist = await this.client.getPlaylist(playlistId);
       // return playlist;
-      console.log("YouTube Music support is temporarily disabled.");
-      return Promise.resolve({ tracks: [] });
+      throw new Error('YouTube Music feature is temporarily disabled.');
     } catch (error) {
       console.error(`Failed to fetch YouTube Music playlist ${playlistId}:`, error);
       throw new Error('Invalid YouTube Music playlist URL or failed to fetch details.');
