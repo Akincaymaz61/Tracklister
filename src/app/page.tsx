@@ -6,7 +6,7 @@ import Image from "next/image";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { Loader2, Music, ListMusic, Download, Moon, Sun, Info } from "lucide-react";
+import { Loader2, Music, ListMusic, Copy, Moon, Sun, Info } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 import { Button } from "@/components/ui/button";
@@ -92,22 +92,27 @@ export default function Home() {
     setIsLoading(false);
   }
 
-  function downloadTrackList() {
+  async function copyTrackList() {
     if (!playlist) return;
-    const tracksToDownload = playlist.tracks;
-
-    const fileContent = tracksToDownload
+    
+    const fileContent = playlist.tracks
       .map((track) => `${track.title} - ${track.artist}`)
       .join("\n");
-    const blob = new Blob([fileContent], { type: "text/plain;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${playlist.name}-playlist.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+
+    try {
+      await navigator.clipboard.writeText(fileContent);
+      toast({
+        title: "Liste kopyalandı!",
+        description: `${playlist.tracks.length} şarkı panoya kopyalandı.`,
+      });
+    } catch (err) {
+      console.error('Failed to copy: ', err);
+      toast({
+        variant: "destructive",
+        title: "Kopyalanamadı",
+        description: "Liste panoya kopyalanamadı.",
+      });
+    }
   }
   
   return (
@@ -130,10 +135,10 @@ export default function Home() {
             <AlertTitle>Track Lister Programına Hoş Geldiniz!</AlertTitle>
             <AlertDescription className="mt-2 space-y-2">
                 <p>
-                Kullanıcılar tarafından oluşturulmuş bir Spotify çalma listesinin bağlantısını yapıştırarak listedeki tüm şarkı ve sanatçı adlarını <code>.txt</code> dosyası olarak indirebilirsiniz.
+                Kullanıcılar tarafından oluşturulmuş bir Spotify çalma listesinin bağlantısını yapıştırarak listedeki tüm şarkı ve sanatçı adlarını panonuza kopyalayabilirsiniz.
                 </p>
                 <p>
-                <b>Önemli Not:</b> Spotify tarafından otomatik olarak oluşturulan (örneğin "Daily Mix" gibi) listelerin doğrudan bağlantıları çalışmayabilir. Bu tür bir listeyi indirmek için önce o listeyi kendi çalma listenize aktarın ve ardından oluşturduğunuz yeni listenin bağlantısını kullanın.
+                <b>Önemli Not:</b> Spotify tarafından otomatik olarak oluşturulan (örneğin "Daily Mix" gibi) listelerin doğrudan bağlantıları çalışmayabilir. Bu tür bir listeyi kopyalamak için önce o listeyi kendi çalma listenize aktarın ve ardından oluşturduğunuz yeni listenin bağlantısını kullanın.
                 </p>
             </AlertDescription>
         </Alert>
@@ -203,9 +208,9 @@ export default function Home() {
                   <div className="flex justify-between items-center">
                       <CardTitle className="text-xl">Your Tracks ({playlist.tracks.length})</CardTitle>
                       <div className="flex items-center gap-4">
-                        <Button variant="outline" size="sm" onClick={downloadTrackList}>
-                          <Download className="mr-2 h-4 w-4" />
-                          Download .txt
+                        <Button variant="outline" size="sm" onClick={copyTrackList}>
+                          <Copy className="mr-2 h-4 w-4" />
+                          Listeyi Kopyala
                         </Button>
                       </div>
                   </div>
