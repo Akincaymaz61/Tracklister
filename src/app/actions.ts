@@ -2,7 +2,6 @@
 
 import { z } from "zod";
 import { getTrackListFlow } from "@/ai/flows/get-track-list-flow";
-import { getYoutubeTrackListFlow } from "@/ai/flows/get-yt-track-list-flow";
 
 const formSchema = z.object({
   playlistUrl: z.string().min(1, { message: "Please enter a URL." }),
@@ -23,8 +22,7 @@ type Playlist = {
 
 async function handlePlaylistRequest(
     playlistUrl: string, 
-    flow: (url: string) => Promise<Playlist>,
-    platformName: "Spotify" | "YouTube Music"
+    flow: (url: string) => Promise<Playlist>
 ): Promise<{ data?: Playlist; error?: string }> {
     try {
         const validatedUrl = formSchema.safeParse({ playlistUrl });
@@ -39,12 +37,12 @@ async function handlePlaylistRequest(
         console.error(error);
         if (error instanceof Error) {
             if (error.message.includes('Authentication failed')) {
-                return { error: `Could not authenticate with ${platformName}. Please check your API credentials.`};
+                return { error: `Could not authenticate with Spotify. Please check your API credentials.`};
             }
             if (error.message.includes('fetch') || error.message.includes('private') || error.message.includes('Invalid')) {
-                return { error: `Could not process the playlist from ${platformName}. Please ensure the URL is correct and the playlist is public.` };
+                return { error: `Could not process the playlist from Spotify. Please ensure the URL is correct and the playlist is public.` };
             }
-            return { error: `An unexpected error occurred with ${platformName}: ${error.message}` };
+            return { error: `An unexpected error occurred with Spotify: ${error.message}` };
         }
         return { error: `An unexpected error occurred. Please try again later.` };
     }
@@ -52,9 +50,5 @@ async function handlePlaylistRequest(
 
 
 export async function getTrackList(playlistUrl: string): Promise<{ data?: Playlist; error?: string }> {
-    return handlePlaylistRequest(playlistUrl, getTrackListFlow, "Spotify");
-}
-
-export async function getYoutubeTrackList(playlistUrl: string): Promise<{ data?: Playlist; error?: string }> {
-    return handlePlaylistRequest(playlistUrl, getYoutubeTrackListFlow, "YouTube Music");
+    return handlePlaylistRequest(playlistUrl, getTrackListFlow);
 }
