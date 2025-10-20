@@ -41,8 +41,8 @@ async function handlePlaylistRequest(
             if (error.message.includes('Authentication failed')) {
                 return { error: `Could not authenticate with ${platformName}. Please check your API credentials.`};
             }
-            if (error.message.includes('fetch')) {
-                return { error: `Could not fetch the playlist from ${platformName}. Please ensure the URL is correct and the playlist is public.` };
+            if (error.message.includes('fetch') || error.message.includes('private') || error.message.includes('Invalid')) {
+                return { error: `Could not process the playlist from ${platformName}. Please ensure the URL is correct and the playlist is public.` };
             }
             return { error: `An unexpected error occurred with ${platformName}: ${error.message}` };
         }
