@@ -6,7 +6,7 @@ import Image from "next/image";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { Loader2, Music, ListMusic, Copy, Moon, Sun, Info } from "lucide-react";
+import { Loader2, Music, ListMusic, Copy, Moon, Sun, Info, Download } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 import { Button } from "@/components/ui/button";
@@ -114,6 +114,30 @@ export default function Home() {
       });
     }
   }
+
+  async function downloadTrackList() {
+    if (!playlist) return;
+
+    const fileContent = playlist.tracks
+      .map((track) => `${track.title} - ${track.artist}`)
+      .join("\n");
+    
+    const blob = new Blob([fileContent], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    const safePlaylistName = playlist.name.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+    link.download = `${safePlaylistName}_tracklist.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    toast({
+      title: "Liste indirildi!",
+      description: `${playlist.name}.txt dosyası indiriliyor.`,
+    });
+  }
   
   return (
     <main className="flex min-h-screen flex-col items-center p-4 sm:p-8 md:p-12 lg:p-24 bg-background">
@@ -135,7 +159,7 @@ export default function Home() {
             <AlertTitle>Track Lister Programına Hoş Geldiniz!</AlertTitle>
             <AlertDescription className="mt-2 space-y-2">
                 <p>
-                Kullanıcılar tarafından oluşturulmuş bir Spotify çalma listesinin bağlantısını yapıştırarak listedeki tüm şarkı ve sanatçı adlarını panonuza kopyalayabilirsiniz.
+                Kullanıcılar tarafından oluşturulmuş bir Spotify çalma listesinin bağlantısını yapıştırarak listedeki tüm şarkı ve sanatçı adlarını panonuza kopyalayabilir veya metin dosyası olarak indirebilirsiniz.
                 </p>
                 <p>
                 <b>Önemli Not:</b> Spotify tarafından otomatik olarak oluşturulan (örneğin "Daily Mix" gibi) listelerin doğrudan bağlantıları çalışmayabilir. Bu tür bir listeyi kopyalamak için önce o listeyi kendi çalma listenize aktarın ve ardından oluşturduğunuz yeni listenin bağlantısını kullanın.
@@ -207,10 +231,14 @@ export default function Home() {
                 <CardHeader>
                   <div className="flex justify-between items-center">
                       <CardTitle className="text-xl">Your Tracks ({playlist.tracks.length})</CardTitle>
-                      <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-2">
                         <Button variant="outline" size="sm" onClick={copyTrackList}>
                           <Copy className="mr-2 h-4 w-4" />
                           Listeyi Kopyala
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={downloadTrackList}>
+                          <Download className="mr-2 h-4 w-4" />
+                          Listeyi İndir
                         </Button>
                       </div>
                   </div>
